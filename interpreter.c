@@ -19,11 +19,6 @@
 
 #define ABORT(l) fprintf(stderr, "unrecognized error: %s\n", l); abort();
 
-const int STACK_SIZE = 1000; // 1000 nested for loops possible at max
-const int TAPE_SIZE = 30000;
-
-int main(int argc, char *argv[]);
-
 // ======================================
 
 // error handling
@@ -38,58 +33,16 @@ char* strerr(int errnum) {
 
 // ======================================
 
-// ======================================
+const int STACK_SIZE = 1000; // 1000 nested for loops possible at max
+const int TAPE_SIZE = 30000;
 
-// stack impl
-typedef struct {
-	int idx;
-	char buf[STACK_SIZE][100];
-} stack;
-
-void push(stack *st, char* ele, int *ok) {
-	if(st->idx >= STACK_SIZE) {
-		if(ok) {*ok = -1; return;}
-	}
-
-	memcpy(st->buf[st->idx], &ele, 100);
-	st->idx++;
-}
-
-char* pop(stack *st, int *ok) {
-	if(st->idx < 0) { // TODO: Check if this can be coverted to a generic bounds check preprocessor
-		if(ok) {*ok = -1; return "";}
-	}
-
-	st->idx--;
-
-	return &st->buf[st->idx + 1][0];
-}
-
-char* peek(stack *st, int *ok) {
-	if(st->idx < 0 || st->idx > STACK_SIZE) {
-		if(ok) {*ok = -1; return "";}
-	}
-
-	return &st->buf[st->idx][0];
-}
-
-void print_stack(stack *st) {
-	if(st->idx == 0) {printf("stack is empty");}
-	for(int i = 0; i < st->idx; i++) {
-		printf("%s | ", st->buf[i]);
-	}
-}
-
-// ======================================
+int main(int argc, char *argv[]);
 
 // interpreter impl
 
 typedef struct {
-	char tape[TAPE_SIZE]; // TODO(feniljain): convert it into an array of 1 byte elements
+	char tape[TAPE_SIZE];
 	int pointer;
-	bool capture_loop_str;
-	char loop_str[100];
-	stack st;
 } engine;
 
 int exec(engine *eng, char *prog) {
@@ -173,10 +126,6 @@ int exec(engine *eng, char *prog) {
 void reset(engine *eng) {
 	memset(eng->tape, 0, TAPE_SIZE * sizeof(eng->tape[0]));
 	eng->pointer = 0;
-
-	stack st;
-	st.idx = 0;
-	eng->st = st;
 }
 
 int repl(engine *eng) {
@@ -200,8 +149,6 @@ int repl(engine *eng) {
 				printf("pointer index: %d", eng->pointer);
 			} else if (!strcmp(cmd, "curr")) {
 				printf("value at current index: %d", eng->tape[eng->pointer]);
-			} else if (!strcmp(cmd, "loop_str")) {
-				printf("loop string: %s", eng->loop_str);
 			} else {
 				int locs = atoi(cmd);
 				for(int i = 0; i < locs; i++) {
@@ -212,8 +159,6 @@ int repl(engine *eng) {
 		} else {
 			int errno = exec(eng, prog);
 			if(errno != 0) {printf("error: %s\n", strerr(errno));}
-			
-			if(errno == ERR_NO_MATCHING_BRACKET) {return 1;} // end program
 		}
 		
 		// add_history(); // TODO(feniljain): remember to check if it's an empty line, don't add it
@@ -303,10 +248,6 @@ int main(int argc, char *argv[]) {
 	engine eng;
 	memset(eng.tape, 0, TAPE_SIZE * sizeof(eng.tape[0])); // Make sure all tape is set to zero
 	eng.pointer = 0;
-
-	stack st;
-	st.idx = 0;
-	eng.st = st;
 
 	char* cmd = argv[1];
 	if(cmd == NULL || !strcmp(cmd, "repl")) {
