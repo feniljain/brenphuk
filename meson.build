@@ -2,8 +2,6 @@ project('brenphuk', 'c',
   version : '0.1',
   default_options : ['warning_level=3', 'default_library=static'])
 
-add_global_arguments('-DDBG_LOGS', language : 'c')
-
 readline_dep = dependency('readline').as_system()
 
 executable('brenphuk',

@@ -7,6 +7,8 @@
 
 #include <readline/readline.h>
 
+#define DBG_LOGS //comment this to disable debug comments
+
 #ifdef DBG_LOGS
 #define DBG_PRINT(l) fprintf(stderr, "DEBUG: %s\n", l);
 #define DBG_PRINTF(fmt, ...) \
@@ -16,6 +18,8 @@
 #define DBG_PRINTF(fmt, ...) \
             do {} while (0)
 #endif
+
+// #define assert(x) ((x) ? (void)0 : (printf("Assertion for %s @ %s:%d!\n", #x, __FILE__, __LINE__), abort()))
 
 #define ABORT(l) fprintf(stderr, "unrecognized error: %s\n", l); abort();
 
