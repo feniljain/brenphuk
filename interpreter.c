@@ -45,15 +45,92 @@ int main(int argc, char *argv[]);
 // interpreter impl
 
 typedef struct {
-	char tape[TAPE_SIZE];
 	int pointer;
+	char tape[TAPE_SIZE];
+	int brackets_loc[TAPE_SIZE][2];
 } engine;
 
-int exec(engine *eng, char *prog) {
-	DBG_PRINT(prog);
-	size_t prog_len = strlen(prog);
-	size_t i = 0;
+void print_bracket_arr(engine *eng, int stop_len) {
+	int i = 0;
+
+	while(true) {
+		if(stop_len != -1) {
+			if(i > stop_len) {
+				break;
+			}
+		} else {
+			if(eng->brackets_loc[i][0] == -1) {
+				break;
+			}
+		}
+
+		DBG_PRINTF("brackets_loc[%d]: [: %d ]: %d", i, eng->brackets_loc[i][0], eng->brackets_loc[i][1]);
+		i += 1;
+	}
+}
+
+void fill_brackets_loc(engine *eng, char *prog, int prog_len) {
+	int i = 0, idx = 0;
 	while(i < prog_len) {
+		switch (prog[i]) {
+			case '[': {
+				eng->brackets_loc[idx][0] = i;
+
+				int brackets_depth = 0;
+				for(int j = i; j < prog_len; j++) {
+					if(prog[j] == '[') {
+						brackets_depth++;
+					} else if(prog[j] == ']') {
+						brackets_depth--;
+					}
+	
+					if(brackets_depth == 0) {
+						eng->brackets_loc[idx][1] = j;
+						break;
+					}
+				}
+
+				if(brackets_depth != 0) {
+					ABORT("brackets mismatch");
+				}
+
+				idx++;
+				break;
+			}
+			default: break;
+		}
+
+		i++;
+	}
+}
+
+enum Bracket {OPEN = 1, CLOSE = 2};
+
+int get_matching_bracket_idx(engine *eng, int idx, int br) {
+	int check_idx = -1, ret_idx = -1;
+	switch (br) {
+		case OPEN: check_idx = 0; ret_idx = 1; break;
+		case CLOSE: check_idx = 1; ret_idx = 0; break;
+		default: ABORT("this is an internal function, what you passing dumbo"); break;
+	}
+	
+	for (int i = 0; eng->brackets_loc[i][0] != -1; i++) {
+		if(idx == eng->brackets_loc[i][check_idx]) {
+			return eng->brackets_loc[i][ret_idx];
+		}
+	}
+
+	return -1;
+}
+	
+int exec(engine *eng, char *prog, int prog_len) {
+	DBG_PRINT(prog);
+	int i = 0;
+
+	fill_brackets_loc(eng, prog, prog_len);
+	print_bracket_arr(eng, -1);
+
+	while(i < prog_len && i >= 0) {
 		switch(prog[i]) {
 			case '>':  eng->pointer++; break; // TODO(feniljain): Add bound checks here
 			case '<':  eng->pointer--; break; // TODO(feniljain): Add bound checks here
@@ -66,54 +143,25 @@ int exec(engine *eng, char *prog) {
 				eng->tape[eng->pointer]=ch;
 				break;
 			}
-			case '[':  {
-				if(eng->tape[eng->pointer] == 0) {
-					int brackets_depth = 0;
-					while(i < prog_len) {
-						DBG_PRINTF("[ prog[%zu]: %c %d", i, prog[i], brackets_depth);
-
-						if(prog[i] == '[') {
-							brackets_depth++;
-						} else if (prog[i] == ']') {
-							brackets_depth--;
-						}
-
-						if(!brackets_depth) {
-							break;
-						}
-
-						i++;
-					}
-
-					if(brackets_depth != 0) {
-						ABORT("could not find matching closing square bracket");
-					}	
+			case '[':
+			case ']':  {
+				int br = OPEN;
+				bool condition;
+				if (prog[i] == '[') {
+					condition = eng->tape[eng->pointer] == 0;
+				} else {
+					condition = eng->tape[eng->pointer] != 0;
+					br = CLOSE;
 				}
 
-				break;
-			}
-			case ']':  {
-				if(eng->tape[eng->pointer] != 0) {
-					int brackets_depth = 0;
-					while(i < prog_len) {
-						DBG_PRINTF("] prog[%zu]: %c %d", i, prog[i], brackets_depth);
-
-						if(prog[i] == '[') {
-							brackets_depth--;
-						} else if (prog[i] == ']') {
-							brackets_depth++;
-						}
-
-						if(!brackets_depth) {
-							break;
-						}
-
-						i--;
+				if(condition) {
+					int matching_idx = get_matching_bracket_idx(eng, i, br);
+					if(matching_idx == -1) {
+						ABORT("could not find matching bracket, bug in bracket finding code");
 					}
-
-					if(brackets_depth != 0) {
-						ABORT("could not find matching opening square bracket");
-					}	
+					// DBG_PRINTF("] i: %d", i);
+					i = matching_idx;
+					continue;
 				}
 
 				break;
@@ -128,8 +176,10 @@ int exec(engine *eng, char *prog) {
 }
 
 void reset(engine *eng) {
-	memset(eng->tape, 0, TAPE_SIZE * sizeof(eng->tape[0]));
+	memset(eng->tape, 0, sizeof eng->tape);
 	eng->pointer = 0;
+
+	memset(eng->brackets_loc, -1, sizeof eng->brackets_loc);
 }
 
 int repl(engine *eng) {
@@ -161,7 +211,7 @@ int repl(engine *eng) {
 			}
 			printf("\n");
 		} else {
-			int errno = exec(eng, prog);
+			int errno = exec(eng, prog, (int)strlen(prog));
 			if(errno != 0) {printf("error: %s\n", strerr(errno));}
 		}
 		
@@ -174,43 +224,42 @@ int repl(engine *eng) {
 }
 
 int tests(engine *eng) {
-	exec(eng, "+++");
+	exec(eng, "+++", 3);
 	assert(eng->tape[0] == 3);
 
 	reset(eng);
 	DBG_PRINT("tests::test 1 done");
 
 	// opening bracket for loop test
-	exec(eng, "[++]");
+	exec(eng, "[++]", 4);
 	assert(eng->tape[0] == 0);
 
 	reset(eng);
 	DBG_PRINT("tests::test 2 done");
 
 	// nested opening bracket for loop test
-	exec(eng, "[++[++]]");
+	exec(eng, "[++[++]]", 8);
 	assert(eng->tape[0] == 0);
 
 	reset(eng);
 	DBG_PRINT("tests::test 3 done");
 
 	// closing bracket for loop test
-	exec(eng, "+++[-]");
+	exec(eng, "+++[-]", 6);
 	assert(eng->tape[0] == 0);
 
 	reset(eng);
 	DBG_PRINT("tests::test 4 done");
 
-	// closing bracket for loop test
-	exec(eng, "+++>+[[-]<-]");
-	assert(eng->tape[0] == 0);
-	assert(eng->tape[1] == 0);
+	exec(eng, ">+++++++++[<++++++>-]<...>++++++++++.", 37);
+	assert(eng->tape[0] == 54);
+	assert(eng->tape[1] == 10);
 
 	reset(eng);
 	DBG_PRINT("tests::test 5 done");
 
 	// part of hello world
-	exec(eng, "++++++++[>++++[>++>+++>+++>+<<<<-]>+>+>->>+[<]<-]");
+	exec(eng, "++++++++[>++++[>++>+++>+++>+<<<<-]>+>+>->>+[<]<-]", 49);
 	assert(eng->tape[0] == 0);
 	assert(eng->tape[1] == 0);
 	assert(eng->tape[2] == 72);
@@ -222,24 +271,11 @@ int tests(engine *eng) {
 	reset(eng);
 	DBG_PRINT("tests::test 6 done");
 
-	// part of hello world
-	exec(eng, "++++++++[>++++[>++>+++>+++>+<<<<-]>+>+>->>+[<]<-]");
-	assert(eng->tape[0] == 0);
-	assert(eng->tape[1] == 0);
-	assert(eng->tape[2] == 72);
-	assert(eng->tape[3] == 104);
-	assert(eng->tape[4] == 88);
-	assert(eng->tape[5] == 32);
-	assert(eng->tape[6] == 8);
+	// // hello world
+	exec(eng, "++++++++[>++++[>++>+++>+++>+<<<<-]>+>+>->>+[<]<-]>>.>---.+++++++..+++.>>.<-.<.+++.------.--------.>>+.>++.", 106);
 
 	reset(eng);
 	DBG_PRINT("tests::test 7 done");
-
-	// hello world
-	exec(eng, "++++++++[>++++[>++>+++>+++>+<<<<-]>+>+>->>+[<]<-]>>.>---.+++++++..+++.>>.<-.<.+++.------.--------.>>+.>++.");
-
-	reset(eng);
-	DBG_PRINT("tests::test 8 done");
 
 	return 0;
 }
@@ -250,8 +286,10 @@ int main(int argc, char *argv[]) {
 	}
 
 	engine eng;
-	memset(eng.tape, 0, TAPE_SIZE * sizeof(eng.tape[0])); // Make sure all tape is set to zero
+	memset(eng.tape, 0, sizeof eng.tape); // Make sure all tape is set to zero
 	eng.pointer = 0;
+
+	memset(eng.brackets_loc, -1, sizeof eng.brackets_loc);
 
 	char* cmd = argv[1];
 	if(cmd == NULL || !strcmp(cmd, "repl")) {
