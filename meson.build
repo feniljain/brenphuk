@@ -4,6 +4,17 @@ project('brenphuk', 'c',
 
 readline_dep = dependency('readline').as_system()
 
+# source: https://github.com/tiernemi/meson-sample-project/blob/master/meson.build
+# This adds the clang format file to the build directory
+configure_file(input : '.clang-format',
+               output : '.clang-format',
+	       copy: true)
+
+run_target('format',
+  command : ['clang-format','-i','-style=file', ['../interpreter.c']])
+
+run_command('clang-format','-i','-style=file', 'interpreter.c')
+
 executable('brenphuk',
            'interpreter.c',
            install : true,
