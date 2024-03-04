@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
+#include <unistd.h>
 
 #include <readline/readline.h>
 
@@ -164,7 +166,7 @@ int exec(engine *eng, char *prog, int prog_len) {
       eng->tape[eng->pointer]--;
       break;
     case '.':
-      printf("%c\n", eng->tape[eng->pointer]);
+      printf("%c", eng->tape[eng->pointer]);
       break;
     case ',': {
       char ch;
@@ -316,6 +318,62 @@ int tests(engine *eng) {
   return 0;
 }
 
+typedef struct {
+  char *prog;
+  int len;
+} ProgStr;
+
+ProgStr read_file(char *file_path) {
+  FILE *fptr;
+
+  // char cwd[1000];
+  // getcwd(&cwd[0], 1000);
+  // DBG_PRINTF("cwd: %s", cwd);
+
+  int idx = 0;
+  char *buf = NULL, *prog = (char *)malloc(1000000);
+  assert(prog != NULL);
+
+  size_t linecap = 0;
+  ssize_t linelen;
+
+  fptr = fopen(file_path, "r");
+  assert(fptr != NULL);
+
+  while ((linelen = getline(&buf, &linecap, fptr)) > 0) {
+    // converting linelen is safe cause we have checked it's greater than zero
+    // already
+    memmove(prog + idx, buf, (size_t)linelen);
+    idx += linelen;
+  }
+
+  ProgStr prog_str;
+  prog_str.prog = prog;
+  prog_str.len = idx;
+
+  return prog_str;
+}
+
+int benchmark(engine *eng) {
+  clock_t start, end;
+  double cpu_time_used;
+
+  ProgStr prog_str = read_file("../programs/mandlebrot.bf");
+  DBG_PRINTF("prog: %s: %d", prog_str.prog, prog_str.len);
+
+  start = clock();
+
+  exec(eng, prog_str.prog, prog_str.len);
+
+  end = clock();
+  cpu_time_used = ((double)(end - start)) / CLOCKS_PER_SEC;
+  DBG_PRINTF("benchmark::program 1 took: %f secs", cpu_time_used);
+
+  reset(eng);
+
+  return 0;
+}
+
 int main(int argc, char *argv[]) {
   if (argc != 1 && argc != 2) {
     printf("brenphuk [command]: repl, tests");
@@ -332,6 +390,8 @@ int main(int argc, char *argv[]) {
     return repl(&eng);
   } else if (!strcmp(cmd, "tests")) {
     tests(&eng);
+  } else if (!strcmp(cmd, "benchmark")) {
+    benchmark(&eng);
   }
 
   return 0;
