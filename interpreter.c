@@ -27,7 +27,7 @@
 // __FILE__, __LINE__), abort()))
 
 #define ABORT(l)                                                               \
-  fprintf(stderr, "unrecognized error: %s\n", l);                              \
+  fprintf(stderr, "%s\n", l);                                                  \
   abort();
 
 // ======================================
@@ -55,24 +55,33 @@ int main(int argc, char *argv[]);
 
 int pointer;
 char tape[TAPE_SIZE];
-int brackets_loc[TAPE_SIZE][2];
+int open_brackets_loc[TAPE_SIZE];
+int close_brackets_loc[TAPE_SIZE];
 
-void print_bracket_arr(int stop_len) {
+enum Bracket { OPEN = 1, CLOSE = 2 };
+
+void print_bracket_arr(int stop_len, enum Bracket br) {
   int i = 0;
+  char br_ch = '\0';
+  int *arr;
 
-  while (true) {
-    if (stop_len != -1) {
-      if (i > stop_len) {
-        break;
-      }
-    } else {
-      if (brackets_loc[i][0] == -1) {
-        break;
-      }
+  if (br == 1) {
+    br = '[';
+    arr = &open_brackets_loc[0];
+  } else {
+    br = ']';
+    arr = &close_brackets_loc[0];
+  }
+
+  while (i < TAPE_SIZE) {
+    if (stop_len != -1 && i > stop_len) {
+      break;
     }
 
-    DBG_PRINTF("brackets_loc[%d]: [: %d ]: %d", i, brackets_loc[i][0],
-               brackets_loc[i][1]);
+    if (arr[i] != -1) {
+      DBG_PRINTF("brackets_loc[%d]: %c: %d", i, br_ch, arr[i]);
+    }
+
     i += 1;
   }
 }
@@ -80,12 +89,10 @@ void print_bracket_arr(int stop_len) {
 // could I use a hashmap here? Well for small programs and small
 // number of brackets, a linear search will be faster (tsoding ftw)
 void fill_brackets_loc(char *prog, int prog_len) {
-  int i = 0, idx = 0;
+  int i = 0;
   while (i < prog_len) {
     switch (prog[i]) {
     case '[': {
-      brackets_loc[idx][0] = i;
-
       int brackets_depth = 0;
       for (int j = i; j < prog_len; j++) {
         if (prog[j] == '[') {
@@ -95,7 +102,8 @@ void fill_brackets_loc(char *prog, int prog_len) {
         }
 
         if (brackets_depth == 0) {
-          brackets_loc[idx][1] = j;
+          open_brackets_loc[i] = j;
+          close_brackets_loc[j] = i;
           break;
         }
       }
@@ -104,7 +112,6 @@ void fill_brackets_loc(char *prog, int prog_len) {
         ABORT("brackets mismatch");
       }
 
-      idx++;
       break;
     }
     default:
@@ -115,32 +122,30 @@ void fill_brackets_loc(char *prog, int prog_len) {
   }
 }
 
-enum Bracket { OPEN = 1, CLOSE = 2 };
-
-int get_matching_bracket_idx(int idx, int br) {
-  int check_idx = -1, ret_idx = -1;
-  switch (br) {
-  case OPEN:
-    check_idx = 0;
-    ret_idx = 1;
-    break;
-  case CLOSE:
-    check_idx = 1;
-    ret_idx = 0;
-    break;
-  default:
-    ABORT("this is an internal function, what you passing dumbo");
-    break;
-  }
-
-  for (int i = 0; brackets_loc[i][0] != -1; i++) {
-    if (idx == brackets_loc[i][check_idx]) {
-      return brackets_loc[i][ret_idx];
-    }
-  }
-
-  return -1;
-}
+// int get_matching_bracket_idx(int idx, int br) {
+//   int check_idx = -1, ret_idx = -1;
+//   switch (br) {
+//   case OPEN:
+//     check_idx = 0;
+//     ret_idx = 1;
+//     break;
+//   case CLOSE:
+//     check_idx = 1;
+//     ret_idx = 0;
+//     break;
+//   default:
+//     ABORT("this is an internal function, what you passing dumbo");
+//     break;
+//   }
+//
+//   for (int i = 0; brackets_loc[i][0] != -1; i++) {
+//     if (idx == brackets_loc[i][check_idx]) {
+//       return brackets_loc[i][ret_idx];
+//     }
+//   }
+//
+//   return -1;
+// }
 
 double benchmark_results[8][2]; // 7 commands, 1st column for count, 2nd for
                                 // exec avg time
@@ -161,10 +166,11 @@ int exec(char *prog, int prog_len) {
   // double cpu_time_used;
 
   fill_brackets_loc(prog, prog_len);
-  print_bracket_arr(-1);
+  print_bracket_arr(-1, OPEN);
+  DBG_PRINT("=====");
+  print_bracket_arr(-1, CLOSE);
 
-  while (i < prog_len && i >= 0) {
-    // int dataptr = pointer;
+  while (i < prog_len) {
     // cnt++;
     // start = clock();
     switch (prog[i]) {
@@ -196,25 +202,27 @@ int exec(char *prog, int prog_len) {
       break;
     }
     case '[':
-    case ']': {
-      int br = OPEN;
-      bool condition;
-      if (prog[i] == '[') {
-        b_idx = 6;
-        condition = tape[pointer] == 0;
-      } else {
-        b_idx = 7;
-        condition = tape[pointer] != 0;
-        br = CLOSE;
+      b_idx = 6;
+      if (tape[pointer] == 0) {
+        int idx = open_brackets_loc[i];
+        if (idx == -1) {
+          DBG_PRINTF("[: got bracket_loc as -1 for i: %d", i);
+          ABORT("invalid state");
+        }
+        i = idx;
+        continue;
       }
 
-      if (condition) {
-        int matching_idx = get_matching_bracket_idx(i, br);
-        if (matching_idx == -1) {
-          ABORT("could not find matching bracket, bug in bracket finding code");
+      break;
+    case ']': {
+      b_idx = 7;
+      if (tape[pointer] != 0) {
+        int idx = close_brackets_loc[i];
+        if (idx == -1) {
+          DBG_PRINTF("]: got bracket_loc as -1 for i: %d", i);
+          ABORT("invalid state");
         }
-        // DBG_PRINTF("] i: %d", i);
-        i = matching_idx;
+        i = idx;
         continue;
       }
 
@@ -245,7 +253,8 @@ void reset(void) {
   memset(tape, 0, sizeof tape);
   pointer = 0;
 
-  memset(brackets_loc, -1, sizeof brackets_loc);
+  memset(open_brackets_loc, -1, sizeof open_brackets_loc);
+  memset(close_brackets_loc, -1, sizeof close_brackets_loc);
 }
 
 int repl(void) {
@@ -415,7 +424,8 @@ int main(int argc, char *argv[]) {
   memset(tape, 0, sizeof tape); // Make sure all tape is set to zero
   pointer = 0;
 
-  memset(brackets_loc, -1, sizeof brackets_loc);
+  memset(open_brackets_loc, -1, sizeof open_brackets_loc);
+  memset(close_brackets_loc, -1, sizeof close_brackets_loc);
 
   char *cmd = argv[1];
   if (cmd == NULL || !strcmp(cmd, "repl")) {
