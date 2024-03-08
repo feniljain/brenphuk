@@ -22,6 +22,9 @@ executable('brenphuk',
 					'-Wcast-align', '-Wunused', '-Wpointer-arith', '-Wold-style-cast', 
 					'-Wundef', '-Winit-self', '-Wredundant-decls', '-Wmissing-include-dirs', 
 					'-Wswitch-default', '-Wswitch-enum', '-Wfloat-equal', '-Wformat-security', 
-					'-Wpedantic'],
+					'-Wpedantic',
+					'-Doptimization=3', # '-Db_sanitize=address,undefined',
+					# '-g'
+					],
            dependencies : [readline_dep],
 )
