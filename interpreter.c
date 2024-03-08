@@ -60,42 +60,46 @@ int close_brackets_loc[TAPE_SIZE];
 
 enum Bracket { OPEN = 1, CLOSE = 2 };
 
-void print_bracket_arr(int stop_len, enum Bracket br) {
-  int i = 0;
-  char br_ch = '\0';
-  int *arr;
-
-  if (br == 1) {
-    br = '[';
-    arr = &open_brackets_loc[0];
-  } else {
-    br = ']';
-    arr = &close_brackets_loc[0];
-  }
-
-  while (i < TAPE_SIZE) {
-    if (stop_len != -1 && i > stop_len) {
-      break;
-    }
-
-    if (arr[i] != -1) {
-      DBG_PRINTF("brackets_loc[%d]: %c: %d", i, br_ch, arr[i]);
-    }
-
-    i += 1;
-  }
-}
+// void print_bracket_arr(int stop_len, enum Bracket br) {
+//   int i = 0;
+//   char br_ch = '\0';
+//   int *arr;
+//
+//   if (br == 1) {
+//     br = '[';
+//     arr = &open_brackets_loc[0];
+//   } else {
+//     br = ']';
+//     arr = &close_brackets_loc[0];
+//   }
+//
+//   while (i < TAPE_SIZE) {
+//     if (stop_len != -1 && i > stop_len) {
+//       break;
+//     }
+//
+//     if (arr[i] != -1) {
+//       DBG_PRINTF("brackets_loc[%d]: %c: %d", i, br_ch, arr[i]);
+//     }
+//
+//     i += 1;
+//   }
+// }
 
 // could I use a hashmap here? Well for small programs and small
 // number of brackets, a linear search will be faster (tsoding ftw)
 void fill_brackets_loc(char *prog, int prog_len) {
-  int i = 0;
+  int i = 0, next_open_bracket_loc = -1;
+
   while (i < prog_len) {
     switch (prog[i]) {
     case '[': {
       int brackets_depth = 0;
       for (int j = i; j < prog_len; j++) {
         if (prog[j] == '[') {
+          if (next_open_bracket_loc == -1 && j != i) {
+            next_open_bracket_loc = j;
+          }
           brackets_depth++;
         } else if (prog[j] == ']') {
           brackets_depth--;
@@ -118,34 +122,15 @@ void fill_brackets_loc(char *prog, int prog_len) {
       break;
     }
 
-    i++;
+    if (next_open_bracket_loc != -1) {
+      // DBG_PRINTF("fill_brackets_loc::next_open_bracket_loc::i: %d", i);
+      i = next_open_bracket_loc;
+      next_open_bracket_loc = -1;
+    } else {
+      i++;
+    }
   }
 }
-
-// int get_matching_bracket_idx(int idx, int br) {
-//   int check_idx = -1, ret_idx = -1;
-//   switch (br) {
-//   case OPEN:
-//     check_idx = 0;
-//     ret_idx = 1;
-//     break;
-//   case CLOSE:
-//     check_idx = 1;
-//     ret_idx = 0;
-//     break;
-//   default:
-//     ABORT("this is an internal function, what you passing dumbo");
-//     break;
-//   }
-//
-//   for (int i = 0; brackets_loc[i][0] != -1; i++) {
-//     if (idx == brackets_loc[i][check_idx]) {
-//       return brackets_loc[i][ret_idx];
-//     }
-//   }
-//
-//   return -1;
-// }
 
 double benchmark_results[8][2]; // 7 commands, 1st column for count, 2nd for
                                 // exec avg time
@@ -166,9 +151,6 @@ int exec(char *prog, int prog_len) {
   // double cpu_time_used;
 
   fill_brackets_loc(prog, prog_len);
-  print_bracket_arr(-1, OPEN);
-  DBG_PRINT("=====");
-  print_bracket_arr(-1, CLOSE);
 
   while (i < prog_len) {
     // cnt++;
@@ -367,10 +349,6 @@ typedef struct {
 
 ProgStr read_file(char *file_path) {
   FILE *fptr;
-
-  // char cwd[1000];
-  // getcwd(&cwd[0], 1000);
-  // DBG_PRINTF("cwd: %s", cwd);
 
   int idx = 0;
   char *buf = NULL, *prog = (char *)malloc(1000000);
