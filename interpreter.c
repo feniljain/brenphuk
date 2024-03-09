@@ -7,88 +7,8 @@
 #include <time.h>
 #include <unistd.h>
 
-#include <readline/readline.h>
-
-#define DBG_LOGS // comment this to disable debug comments
-
-#ifdef DBG_LOGS
-#define DBG_PRINT(l) fprintf(stderr, "DEBUG: %s\n", l);
-#define DBG_PRINTF(fmt, ...) fprintf(stderr, "DEBUG: " fmt "\n", __VA_ARGS__);
-#else
-#define DBG_PRINT(l)                                                           \
-  do {                                                                         \
-  } while (0)
-#define DBG_PRINTF(fmt, ...)                                                   \
-  do {                                                                         \
-  } while (0)
-#endif
-
-// #define assert(x) ((x) ? (void)0 : (printf("Assertion for %s @ %s:%d!\n", #x,
-// __FILE__, __LINE__), abort()))
-
-#define ABORT(l)                                                               \
-  fprintf(stderr, "%s\n", l);                                                  \
-  abort();
-
-// ======================================
-
-// error handling
-enum Error { ERR_NO_MATCHING_BRACKET = 1 };
-
-char *strerr(int errnum) {
-  switch (errnum) {
-  case ERR_NO_MATCHING_BRACKET:
-    return "did not find matching loop bracket";
-  default:
-    ABORT("incorrect error num passed");
-  }
-}
-
-// ======================================
-
-const int STACK_SIZE = 1000; // 1000 nested for loops possible at max
-const int TAPE_SIZE = 30000;
-
-int main(int argc, char *argv[]);
-
-// interpreter impl
-
-int pointer;
-char tape[TAPE_SIZE];
-// OPTIMIZATION: Can also convert both of these arrs into one, by
-// storing offset of other bracket, which will be the
-// same for both [], just a matter of addition or
-// subtraction to pointer, but for now it's fine as it is
-int open_brackets_loc[TAPE_SIZE];
-int close_brackets_loc[TAPE_SIZE];
-
-enum Bracket { OPEN = 1, CLOSE = 2 };
-
-// void print_bracket_arr(int stop_len, enum Bracket br) {
-//   int i = 0;
-//   char br_ch = '\0';
-//   int *arr;
-//
-//   if (br == 1) {
-//     br = '[';
-//     arr = &open_brackets_loc[0];
-//   } else {
-//     br = ']';
-//     arr = &close_brackets_loc[0];
-//   }
-//
-//   while (i < TAPE_SIZE) {
-//     if (stop_len != -1 && i > stop_len) {
-//       break;
-//     }
-//
-//     if (arr[i] != -1) {
-//       DBG_PRINTF("brackets_loc[%d]: %c: %d", i, br_ch, arr[i]);
-//     }
-//
-//     i += 1;
-//   }
-// }
+#include "debug.h"
+#include "interpreter.h"
 
 // could I use a hashmap here? Well for small programs and small
 // number of brackets, a linear search will be faster (tsoding ftw)
@@ -140,15 +60,34 @@ void fill_brackets_loc(char *prog, int prog_len) {
   }
 }
 
-double benchmark_results[8][2]; // 7 commands, 1st column for count, 2nd for
-                                // exec avg time
+// enum Bracket { OPEN = 0, CLOSE = 1 };
+// void print_bracket_arr(int stop_len, enum Bracket br) {
+//   int i = 0;
+//   char br_ch = '\0';
+//   int *arr;
+//
+//   if (br == OPEN) {
+//     br = '[';
+//     arr = &open_brackets_loc[0];
+//   } else {
+//     br = ']';
+//     arr = &close_brackets_loc[0];
+//   }
+//
+//   while (i < TAPE_SIZE) {
+//     if (stop_len != -1 && i > stop_len) {
+//       break;
+//     }
+//
+//     if (arr[i] != -1) {
+//       DBG_PRINTF("brackets_loc[%d]: %c: %d", i, br_ch, arr[i]);
+//     }
+//
+//     i += 1;
+//   }
+// }
 
-void print_benchmark_results(void) {
-  for (int i = 0; i < 8; i++) {
-    DBG_PRINTF("%d command executed %f times with %f total exec time", i,
-               benchmark_results[i][0], benchmark_results[i][1]);
-  }
-}
+void parse(void) {}
 
 // TODO(feniljain): shift all operations to functions and try flamegraph
 int exec(char *prog, int prog_len) {
@@ -246,182 +185,4 @@ void reset(void) {
 
   memset(open_brackets_loc, -1, sizeof open_brackets_loc);
   memset(close_brackets_loc, -1, sizeof close_brackets_loc);
-}
-
-int repl(void) {
-  printf("Brainfuck Repl\n");
-  for (;;) {
-    char *prog = (char *)NULL;
-    prog = readline(">> ");
-
-    if (!strcmp(prog, "exit")) {
-      break;
-    } else if (!strcmp(prog, "")) {
-      goto nxt_itr;
-    } else if (!strcmp(prog, "reset")) {
-      reset();
-    } else if (strstr(prog, "print") != NULL) {
-      strsep(&prog, " "); // print cmd
-
-      char *cmd = strsep(&prog, " ");
-
-      if (!strcmp(cmd, "idx")) {
-        printf("pointer index: %d", pointer);
-      } else if (!strcmp(cmd, "curr")) {
-        printf("value at current index: %d", tape[pointer]);
-      } else {
-        int locs = atoi(cmd);
-        for (int i = 0; i < locs; i++) {
-          printf("%d: %d | ", i, tape[i]);
-        }
-      }
-      printf("\n");
-    } else {
-      int errno = exec(prog, (int)strlen(prog));
-      if (errno != 0) {
-        printf("error: %s\n", strerr(errno));
-      }
-    }
-
-  // add_history(); // TODO(feniljain): remember to check if it's an empty line,
-  // don't add it
-  nxt_itr:
-    free(prog);
-  }
-
-  return 0;
-}
-
-int tests(void) {
-  exec("+++", 3);
-  assert(tape[0] == 3);
-
-  reset();
-  DBG_PRINT("tests::test 1 done");
-
-  // opening bracket for loop test
-  exec("[++]", 4);
-  assert(tape[0] == 0);
-
-  reset();
-  DBG_PRINT("tests::test 2 done");
-
-  // nested opening bracket for loop test
-  exec("[++[++]]", 8);
-  assert(tape[0] == 0);
-
-  reset();
-  DBG_PRINT("tests::test 3 done");
-
-  // closing bracket for loop test
-  exec("+++[-]", 6);
-  assert(tape[0] == 0);
-
-  reset();
-  DBG_PRINT("tests::test 4 done");
-
-  exec(">+++++++++[<++++++>-]<...>++++++++++.", 37);
-  assert(tape[0] == 54);
-  assert(tape[1] == 10);
-
-  reset();
-  DBG_PRINT("tests::test 5 done");
-
-  // part of hello world
-  exec("++++++++[>++++[>++>+++>+++>+<<<<-]>+>+>->>+[<]<-]", 49);
-  assert(tape[0] == 0);
-  assert(tape[1] == 0);
-  assert(tape[2] == 72);
-  assert(tape[3] == 104);
-  assert(tape[4] == 88);
-  assert(tape[5] == 32);
-  assert(tape[6] == 8);
-
-  reset();
-  DBG_PRINT("tests::test 6 done");
-
-  // // hello world
-  exec("++++++++[>++++[>++>+++>+++>+<<<<-]>+>+>->>+[<]<-]>>.>---.+++++++..+++.>"
-       ">.<-.<.+++.------.--------.>>+.>++.",
-       106);
-
-  reset();
-  DBG_PRINT("tests::test 7 done");
-
-  return 0;
-}
-
-typedef struct {
-  char *prog;
-  int len;
-} ProgStr;
-
-ProgStr read_file(char *file_path) {
-  FILE *fptr;
-
-  int idx = 0;
-  char *buf = NULL, *prog = (char *)malloc(1000000);
-  assert(prog != NULL);
-
-  size_t linecap = 0;
-  ssize_t linelen;
-
-  fptr = fopen(file_path, "r");
-  assert(fptr != NULL);
-
-  while ((linelen = getline(&buf, &linecap, fptr)) > 0) {
-    // converting linelen is safe cause we have checked it's greater than zero
-    // already
-    memmove(prog + idx, buf, (size_t)linelen);
-    idx += linelen;
-  }
-
-  ProgStr prog_str;
-  prog_str.prog = prog;
-  prog_str.len = idx;
-
-  return prog_str;
-}
-
-int benchmark(void) {
-  clock_t start, end;
-  double cpu_time_used;
-
-  ProgStr prog_str = read_file("../programs/mandlebrot.bf");
-  DBG_PRINTF("prog: %s: %d", prog_str.prog, prog_str.len);
-
-  start = clock();
-
-  exec(prog_str.prog, prog_str.len);
-
-  end = clock();
-  cpu_time_used = ((double)(end - start)) / CLOCKS_PER_SEC;
-  DBG_PRINTF("benchmark::program 1 took: %f secs", cpu_time_used);
-
-  reset();
-
-  return 0;
-}
-
-int main(int argc, char *argv[]) {
-  if (argc != 1 && argc != 2) {
-    printf("brenphuk [command]: repl, tests");
-  }
-
-  memset(tape, 0, sizeof tape); // Make sure all tape is set to zero
-  pointer = 0;
-
-  memset(open_brackets_loc, -1, sizeof open_brackets_loc);
-  memset(close_brackets_loc, -1, sizeof close_brackets_loc);
-
-  char *cmd = argv[1];
-  if (cmd == NULL || !strcmp(cmd, "repl")) {
-    return repl();
-  } else if (!strcmp(cmd, "tests")) {
-    tests();
-  } else if (!strcmp(cmd, "benchmark")) {
-    benchmark();
-  }
-
-  return 0;
 }
