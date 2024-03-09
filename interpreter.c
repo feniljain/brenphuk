@@ -55,6 +55,10 @@ int main(int argc, char *argv[]);
 
 int pointer;
 char tape[TAPE_SIZE];
+// OPTIMIZATION: Can also convert both of these arrs into one, by
+// storing offset of other bracket, which will be the
+// same for both [], just a matter of addition or
+// subtraction to pointer, but for now it's fine as it is
 int open_brackets_loc[TAPE_SIZE];
 int close_brackets_loc[TAPE_SIZE];
 
@@ -96,6 +100,10 @@ void fill_brackets_loc(char *prog, int prog_len) {
     case '[': {
       int brackets_depth = 0;
       for (int j = i; j < prog_len; j++) {
+        // OPTIMIZATION: make a stack and track all these []
+        // encountered in between current pos: i and and it's corresponding
+        // close bracket, then pop the stack and insert indexes into
+        // *_bracket_loc
         if (prog[j] == '[') {
           if (next_open_bracket_loc == -1 && j != i) {
             next_open_bracket_loc = j;
@@ -151,6 +159,7 @@ int exec(char *prog, int prog_len) {
   // double cpu_time_used;
 
   fill_brackets_loc(prog, prog_len);
+  // print_bracket_arr(-1, OPEN);
 
   while (i < prog_len) {
     // cnt++;
