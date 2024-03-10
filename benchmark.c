@@ -36,9 +36,9 @@ ProgStr read_file(char *file_path) {
   assert(fptr != NULL);
 
   while ((linelen = getline(&buf, &linecap, fptr)) > 0) {
-    // converting linelen is safe cause we have checked it's greater than zero
-    // already
-    memmove(prog + idx, buf, (size_t)linelen);
+    // - converting linelen is safe cause we have checked it's greater than zero already
+		// - as we know memory regions are not overlapping, it's safe to use memcpy instead of memmove
+    memcpy(prog + idx, buf, (size_t)linelen); 
     idx += linelen;
   }
 
@@ -51,18 +51,29 @@ ProgStr read_file(char *file_path) {
 
 int benchmark(void) {
   clock_t start, end;
-  double cpu_time_used;
+  double cpu_time_used, avg_cpu_time_used = 0.0;
+	int iterations = 10;
 
   ProgStr prog_str = read_file("../programs/mandlebrot.bf");
   DBG_PRINTF("prog: %s: %d", prog_str.prog, prog_str.len);
 
-  start = clock();
+	for(int i = 0; i < iterations; i++) {
+		#undef DBG_LOGS
 
-  exec(prog_str.prog, prog_str.len);
+		start = clock();
 
-  end = clock();
-  cpu_time_used = ((double)(end - start)) / CLOCKS_PER_SEC;
-  DBG_PRINTF("benchmark::program 1 took: %f secs", cpu_time_used);
+		exec(prog_str.prog, prog_str.len);
+
+		end = clock();
+		cpu_time_used = ((double)(end - start)) / CLOCKS_PER_SEC;
+		avg_cpu_time_used += cpu_time_used;
+		DBG_PRINTF("benchmark::program took: %f secs in %d iteration", cpu_time_used, i);
+
+		reset();
+	}
+
+	avg_cpu_time_used /= (double)iterations;
+	DBG_PRINTF("benchmark::on average program took: %f secs", avg_cpu_time_used);
 
   reset();
 
