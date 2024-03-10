@@ -54,80 +54,63 @@ int get_pointer(void) { return pointer; }
 
 // could I use a hashmap here? Well for small programs and small
 // number of brackets, a linear search will be faster (tsoding ftw)
-void fill_brackets_loc(char *prog, int prog_len) {
-  int i = 0, next_open_bracket_loc = -1;
-
-  while (i < prog_len) {
-    switch (prog[i]) {
-    case '[': {
-      int brackets_depth = 0;
-      for (int j = i; j < prog_len; j++) {
-        // OPTIMIZATION: make a stack and track all these []
-        // encountered in between current pos: i and and it's corresponding
-        // close bracket, then pop the stack and insert indexes into
-        // *_bracket_loc
-        if (prog[j] == '[') {
-          if (next_open_bracket_loc == -1 && j != i) {
-            next_open_bracket_loc = j;
-          }
-          brackets_depth++;
-        } else if (prog[j] == ']') {
-          brackets_depth--;
-        }
-
-        if (brackets_depth == 0) {
-          open_brackets_loc[i] = j;
-          close_brackets_loc[j] = i;
-          break;
-        }
-      }
-
-      if (brackets_depth != 0) {
-        ABORT("brackets mismatch");
-      }
-
-      break;
-    }
-    default:
-      break;
+void fill_brackets_loc(void) {
+  for (int i = 0; i <= ops_len; i++) {
+    if (ops[i].op_type != JMP_IF_ZERO) {
+      continue;
     }
 
-    if (next_open_bracket_loc != -1) {
-      // DBG_PRINTF("fill_brackets_loc::next_open_bracket_loc::i: %d", i);
-      i = next_open_bracket_loc;
-      next_open_bracket_loc = -1;
-    } else {
-      i++;
+    int brackets_depth = 0;
+    for (int j = i; j <= ops_len; j++) {
+      // OPTIMIZATION: make a stack and track all these []
+      // encountered in between current pos: i and and it's corresponding
+      // close bracket, then pop the stack and insert indexes into
+      // *_bracket_loc
+      if (ops[j].op_type == JMP_IF_ZERO) {
+        brackets_depth++;
+      } else if (ops[j].op_type == JMP_IF_NOT_ZERO) {
+        brackets_depth--;
+      }
+
+      if (brackets_depth == 0) {
+        open_brackets_loc[i] = j;
+        close_brackets_loc[j] = i;
+        break;
+      }
+    }
+
+    if (brackets_depth != 0) {
+      ABORT("brackets mismatch");
     }
   }
 }
 
-// enum Bracket { OPEN = 0, CLOSE = 1 };
-// void print_bracket_arr(int stop_len, enum Bracket br) {
-//   int i = 0;
-//   char br_ch = '\0';
-//   int *arr;
-//
-//   if (br == OPEN) {
-//     br = '[';
-//     arr = &open_brackets_loc[0];
-//   } else {
-//     br = ']';
-//     arr = &close_brackets_loc[0];
-//   }
-//
-//   while (i < TAPE_SIZE) {
-//     if (stop_len != -1 && i > stop_len) {
-//       break;
-//     }
-//
-//     if (arr[i] != -1) {
-//       DBG_PRINTF("brackets_loc[%d]: %c: %d", i, br_ch, arr[i]);
-//     }
-//
-//     i += 1;
-//   }
-// }
+enum Bracket { OPEN = 0, CLOSE = 1 };
+void print_bracket_arr(int stop_len, enum Bracket br) {
+  int i = 0;
+  char br_ch = '\0';
+  int *arr;
+
+  if (br == OPEN) {
+    br_ch = '[';
+    arr = &open_brackets_loc[0];
+  } else {
+    br_ch = ']';
+    arr = &close_brackets_loc[0];
+  }
+
+  while (i < TAPE_SIZE) {
+    if (stop_len != -1 && i > stop_len) {
+      break;
+    }
+
+    if (arr[i] != -1) {
+      DBG_PRINTF("brackets_loc[%d]: %c: %d", i, br_ch, arr[i]);
+    }
+
+    i += 1;
+  }
+}
 
 void print_ops(void) {
   int i = 0;
@@ -193,8 +176,6 @@ void parse(char *prog, int prog_len) {
     ops[++ops_len] = op;
     i++;
   }
-
-  // print_ops();
 }
 
 // TODO(feniljain): shift all operations to functions and try flamegraph
@@ -206,8 +187,10 @@ int exec(char *prog, int prog_len) {
   // double cpu_time_used;
 
   parse(prog, prog_len);
-  fill_brackets_loc(prog, prog_len);
-  // print_bracket_arr(-1, OPEN);
+  print_ops();
+  fill_brackets_loc();
+  print_bracket_arr(-1, OPEN);
+  print_bracket_arr(-1, CLOSE);
 
   while (i < prog_len) {
     // cnt++;
