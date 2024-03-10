@@ -87,7 +87,70 @@ void fill_brackets_loc(char *prog, int prog_len) {
 //   }
 // }
 
-void parse(void) {}
+void print_ops(void) {
+  int i = 0;
+  while (i < ops_len) {
+    DBG_PRINTF("op[%d]: op_type: %d, repeat: %d", i, ops[i].op_type,
+               ops[i].repeat);
+    i++;
+  }
+}
+
+void parse(char *prog, int prog_len) {
+  int i = 0;
+
+  while (i < prog_len) {
+    enum Op_type op_type = INVALID;
+    switch (prog[i]) {
+    case '>':
+      op_type = FWD;
+    case '<':
+      if (op_type == INVALID)
+        op_type = BWD;
+    case '+':
+      if (op_type == INVALID)
+        op_type = INCREMENT;
+    case '-': {
+      if (op_type == INVALID)
+        op_type = DECREMENT;
+
+      if (i > 0) {
+        if (ops[i - 1].op_type == op_type) {
+          ops[i].repeat++;
+          i++;
+          continue;
+        }
+      }
+
+      break;
+    }
+    case '.':
+      op_type = OUTPUT;
+      break;
+    case ',':
+      op_type = INPUT;
+      break;
+    case '[':
+      op_type = JMP_IF_ZERO;
+      break;
+    case ']':
+      op_type = JMP_IF_NOT_ZERO;
+      break;
+    default:
+      break;
+    }
+    Operation op;
+    op.op_type = op_type;
+    op.repeat = 1;
+
+    ops[i] = op;
+    ops_len++;
+
+    i++;
+  }
+
+  print_ops();
+}
 
 // TODO(feniljain): shift all operations to functions and try flamegraph
 int exec(char *prog, int prog_len) {
@@ -97,6 +160,8 @@ int exec(char *prog, int prog_len) {
   // clock_t start, end;
   // double cpu_time_used;
 
+  ops_len = 0;
+  parse(prog, prog_len);
   fill_brackets_loc(prog, prog_len);
   // print_bracket_arr(-1, OPEN);
 
@@ -106,16 +171,16 @@ int exec(char *prog, int prog_len) {
     switch (prog[i]) {
     case '>':
       b_idx = 0;
-      pointer++;
-      break; // TODO(feniljain): Add bound checks here
+      pointer++; // TODO(feniljain): Add bound checks here
+      break;
     case '<':
       b_idx = 1;
-      pointer--;
-      break; // TODO(feniljain): Add bound checks here
+      pointer--; // TODO(feniljain): Add bound checks here
+      break;
     case '+':
       b_idx = 2;
-      tape[pointer]++;
-      break; // I don't care about int overflow here
+      tape[pointer]++; // I don't care about int overflow here
+      break;
     case '-':
       b_idx = 3;
       tape[pointer]--;
