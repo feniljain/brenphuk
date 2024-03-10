@@ -10,8 +10,17 @@
 #include "debug.h"
 #include "interpreter.h"
 
+// =================== Types ===================
+
 int pointer;
 char tape[TAPE_SIZE];
+
+// OPTIMIZATION: Can also convert both of these arrs into one, by
+// storing offset of other bracket, which will be the
+// same for both [], just a matter of addition or
+// subtraction to pointer, but for now it's fine as it is
+int open_brackets_loc[TAPE_SIZE];
+int close_brackets_loc[TAPE_SIZE];
 
 enum Op_type {
   INVALID = 0,
@@ -31,14 +40,7 @@ typedef struct {
 } Operation;
 Operation ops[TAPE_SIZE];
 
-// OPTIMIZATION: Can also convert both of these arrs into one, by
-// storing offset of other bracket, which will be the
-// same for both [], just a matter of addition or
-// subtraction to pointer, but for now it's fine as it is
-int open_brackets_loc[TAPE_SIZE];
-int close_brackets_loc[TAPE_SIZE];
-
-int ops_len = 0;
+int ops_len;
 
 // =================== Getters ===================
 
@@ -47,6 +49,8 @@ char get_ele_at_idx(int idx) { return tape[idx]; }
 char get_curr_ele(void) { return tape[pointer]; }
 
 int get_pointer(void) { return pointer; }
+
+// =================== Interpreter Impl ===================
 
 // could I use a hashmap here? Well for small programs and small
 // number of brackets, a linear search will be faster (tsoding ftw)
@@ -127,7 +131,7 @@ void fill_brackets_loc(char *prog, int prog_len) {
 
 void print_ops(void) {
   int i = 0;
-  while (i < ops_len) {
+  while (i <= ops_len) {
     DBG_PRINTF("op[%d]: op_type: %d, repeat: %d", i, ops[i].op_type,
                ops[i].repeat);
     i++;
@@ -152,9 +156,9 @@ void parse(char *prog, int prog_len) {
       if (op_type == INVALID)
         op_type = DECREMENT;
 
-      if (i > 0) {
-        if (ops[i - 1].op_type == op_type) {
-          ops[i].repeat++;
+      if (ops_len >= 0) {
+        if (ops[ops_len].op_type == op_type) {
+          ops[ops_len].repeat++;
           i++;
           continue;
         }
@@ -177,17 +181,20 @@ void parse(char *prog, int prog_len) {
     default:
       break;
     }
+
+    if (op_type == INVALID) {
+      ABORT("found invalid token");
+    }
+
     Operation op;
     op.op_type = op_type;
     op.repeat = 1;
 
-    ops[i] = op;
-    ops_len++;
-
+    ops[++ops_len] = op;
     i++;
   }
 
-  print_ops();
+  // print_ops();
 }
 
 // TODO(feniljain): shift all operations to functions and try flamegraph
@@ -198,7 +205,6 @@ int exec(char *prog, int prog_len) {
   // clock_t start, end;
   // double cpu_time_used;
 
-  ops_len = 0;
   parse(prog, prog_len);
   fill_brackets_loc(prog, prog_len);
   // print_bracket_arr(-1, OPEN);
@@ -285,6 +291,8 @@ int exec(char *prog, int prog_len) {
 void reset(void) {
   memset(tape, 0, sizeof tape);
   pointer = 0;
+
+  ops_len = -1;
 
   memset(open_brackets_loc, -1, sizeof open_brackets_loc);
   memset(close_brackets_loc, -1, sizeof close_brackets_loc);
