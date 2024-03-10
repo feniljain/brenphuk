@@ -7,6 +7,9 @@
 #include "interpreter.h"
 #include "debug.h"
 
+double benchmark_results[8][2]; // 7 commands, 1st column for count, 2nd for
+                                // exec avg time
+
 void print_benchmark_results(void) {
   for (int i = 0; i < 8; i++) {
     DBG_PRINTF("%d command executed %f times with %f total exec time", i,

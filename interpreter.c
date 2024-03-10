@@ -10,6 +10,44 @@
 #include "debug.h"
 #include "interpreter.h"
 
+int pointer;
+char tape[TAPE_SIZE];
+
+enum Op_type {
+  INVALID = 0,
+  FWD,
+  BWD,
+  INCREMENT,
+  DECREMENT,
+  OUTPUT,
+  INPUT,
+  JMP_IF_ZERO,
+  JMP_IF_NOT_ZERO,
+};
+
+typedef struct {
+  enum Op_type op_type;
+  uint8_t repeat;
+} Operation;
+Operation ops[TAPE_SIZE];
+
+// OPTIMIZATION: Can also convert both of these arrs into one, by
+// storing offset of other bracket, which will be the
+// same for both [], just a matter of addition or
+// subtraction to pointer, but for now it's fine as it is
+int open_brackets_loc[TAPE_SIZE];
+int close_brackets_loc[TAPE_SIZE];
+
+int ops_len = 0;
+
+// =================== Getters ===================
+
+char get_ele_at_idx(int idx) { return tape[idx]; }
+
+char get_curr_ele(void) { return tape[pointer]; }
+
+int get_pointer(void) { return pointer; }
+
 // could I use a hashmap here? Well for small programs and small
 // number of brackets, a linear search will be faster (tsoding ftw)
 void fill_brackets_loc(char *prog, int prog_len) {

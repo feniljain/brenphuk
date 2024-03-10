@@ -24,13 +24,13 @@ int repl(void) {
       char *cmd = strsep(&prog, " ");
 
       if (!strcmp(cmd, "idx")) {
-        printf("pointer index: %d", pointer);
+        printf("pointer index: %d", get_pointer());
       } else if (!strcmp(cmd, "curr")) {
-        printf("value at current index: %d", tape[pointer]);
+        printf("value at current index: %d", get_curr_ele());
       } else {
         int locs = atoi(cmd);
         for (int i = 0; i < locs; i++) {
-          printf("%d: %d | ", i, tape[i]);
+          printf("%d: %d | ", i, get_ele_at_idx(i));
         }
       }
       printf("\n");
