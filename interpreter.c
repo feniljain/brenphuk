@@ -166,7 +166,9 @@ void parse(char *prog, int prog_len) {
     }
 
     if (op_type == INVALID) {
-      ABORT("found invalid token");
+      i++;
+      continue; // this can happen when there are comments which are supposed to
+                // be ignored
     }
 
     Operation op;
@@ -181,7 +183,7 @@ void parse(char *prog, int prog_len) {
 // TODO(feniljain): shift all operations to functions and try flamegraph
 int exec(char *prog, int prog_len) {
   DBG_PRINT(prog);
-  int i = 0, b_idx; // , cnt = 0;
+  int i = 0, b_idx, val; // , cnt = 0;
 
   // clock_t start, end;
   // double cpu_time_used;
@@ -192,38 +194,45 @@ int exec(char *prog, int prog_len) {
   print_bracket_arr(-1, OPEN);
   print_bracket_arr(-1, CLOSE);
 
-  while (i < prog_len) {
+  while (i <= ops_len) {
     // cnt++;
     // start = clock();
-    switch (prog[i]) {
-    case '>':
+    switch (ops[i].op_type) {
+    case INVALID:
+      ABORT("INVALID shouln't have leakded till here, there's a bug in parsing "
+            "code");
+    case FWD:
       b_idx = 0;
-      pointer++; // TODO(feniljain): Add bound checks here
+      pointer += ops[i].repeat; // TODO(feniljain): Add bound checks here
       break;
-    case '<':
+    case BWD:
       b_idx = 1;
-      pointer--; // TODO(feniljain): Add bound checks here
+      pointer -= ops[i].repeat; // TODO(feniljain): Add bound checks here
       break;
-    case '+':
+    case INCREMENT:
       b_idx = 2;
-      tape[pointer]++; // I don't care about int overflow here
+      val = (int)tape[pointer];
+      val += ops[i].repeat; // TODO(feniljain): add int overflow check here
+      tape[pointer] = (char)val;
       break;
-    case '-':
+    case DECREMENT:
       b_idx = 3;
-      tape[pointer]--;
+      val = (int)tape[pointer];
+      val -= ops[i].repeat; // TODO(feniljain): add int undeflow check here
+      tape[pointer] = (char)val;
       break;
-    case '.':
+    case OUTPUT:
       b_idx = 4;
       printf("%c", tape[pointer]);
       break;
-    case ',': {
+    case INPUT: {
       b_idx = 5;
       char ch;
       scanf("%c", &ch);
       tape[pointer] = ch;
       break;
     }
-    case '[':
+    case JMP_IF_ZERO:
       b_idx = 6;
       if (tape[pointer] == 0) {
         int idx = open_brackets_loc[i];
@@ -236,7 +245,7 @@ int exec(char *prog, int prog_len) {
       }
 
       break;
-    case ']': {
+    case JMP_IF_NOT_ZERO: {
       b_idx = 7;
       if (tape[pointer] != 0) {
         int idx = close_brackets_loc[i];
