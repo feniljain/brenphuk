@@ -3,6 +3,6 @@
 
 // =================== Functions ===================
 
-int benchmark(void);
+int benchmark(int);
 
 #endif

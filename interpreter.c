@@ -42,6 +42,8 @@ Operation ops[TAPE_SIZE];
 
 int ops_len;
 
+int op_assoc[9][9];
+
 // =================== Getters ===================
 
 char get_ele_at_idx(int idx) { return tape[idx]; }
@@ -52,8 +54,50 @@ int get_pointer(void) { return pointer; }
 
 // =================== Interpreter Impl ===================
 
-// could I use a hashmap here? Well for small programs and small
-// number of brackets, a linear search will be faster (tsoding ftw)
+enum Bracket { OPEN = 0, CLOSE = 1 };
+void print_bracket_arr(int stop_len, enum Bracket br) {
+  int i = 0;
+  char br_ch = '\0';
+  int *arr;
+
+  if (br == OPEN) {
+    br_ch = '[';
+    arr = &open_brackets_loc[0];
+  } else {
+    br_ch = ']';
+    arr = &close_brackets_loc[0];
+  }
+
+  while (i < TAPE_SIZE) {
+    if (stop_len != -1 && i > stop_len) {
+      break;
+    }
+
+    if (arr[i] != -1) {
+      DBG_PRINTF("brackets_loc[%d]: %c: %d", i, br_ch, arr[i]);
+    }
+
+    i += 1;
+  }
+}
+
+void print_ops(void) {
+  for (int i = 0; i <= ops_len; i++) {
+    DBG_PRINTF("op[%d]: op_type: %d, repeat: %d", i, ops[i].op_type,
+               ops[i].repeat);
+  }
+}
+
+void print_op_assoc(void) {
+  for (int i = 0; i < 9; i++) {
+    for (int j = 0; j < 9; j++) {
+      if (op_assoc[i][j]) {
+        DBG_PRINTF("op_assoc[%d][%d]: %d", i, j, op_assoc[i][j]);
+      }
+    }
+  }
+}
+
 void fill_brackets_loc(void) {
   for (int i = 0; i <= ops_len; i++) {
     if (ops[i].op_type != JMP_IF_ZERO) {
@@ -85,46 +129,11 @@ void fill_brackets_loc(void) {
   }
 }
 
-enum Bracket { OPEN = 0, CLOSE = 1 };
-void print_bracket_arr(int stop_len, enum Bracket br) {
-  int i = 0;
-  char br_ch = '\0';
-  int *arr;
-
-  if (br == OPEN) {
-    br_ch = '[';
-    arr = &open_brackets_loc[0];
-  } else {
-    br_ch = ']';
-    arr = &close_brackets_loc[0];
-  }
-
-  while (i < TAPE_SIZE) {
-    if (stop_len != -1 && i > stop_len) {
-      break;
-    }
-
-    if (arr[i] != -1) {
-      DBG_PRINTF("brackets_loc[%d]: %c: %d", i, br_ch, arr[i]);
-    }
-
-    i += 1;
-  }
-}
-
-void print_ops(void) {
-  int i = 0;
-  while (i <= ops_len) {
-    DBG_PRINTF("op[%d]: op_type: %d, repeat: %d", i, ops[i].op_type,
-               ops[i].repeat);
-    i++;
-  }
-}
-
 void parse(char *prog, int prog_len) {
   int i = 0;
 
   while (i < prog_len) {
+    bool repeat = false;
     enum Op_type op_type = INVALID;
     switch (prog[i]) {
     case '>':
@@ -141,9 +150,7 @@ void parse(char *prog, int prog_len) {
 
       if (ops_len >= 0) {
         if (ops[ops_len].op_type == op_type) {
-          ops[ops_len].repeat++;
-          i++;
-          continue;
+          repeat = true;
         }
       }
 
@@ -171,11 +178,28 @@ void parse(char *prog, int prog_len) {
                 // be ignored
     }
 
-    Operation op;
-    op.op_type = op_type;
-    op.repeat = 1;
+    if (repeat) {
+      ops[ops_len].repeat++;
+      op_assoc[ops[ops_len].op_type][ops[ops_len].op_type]++;
+    } else {
+      Operation op;
+      op.op_type = op_type;
+      op.repeat = 1;
 
-    ops[++ops_len] = op;
+      ops[++ops_len] = op;
+      if (ops_len > 0) {
+        // This logic simply tries to unite op_assoc[1][5]
+        // and op_assoc[5][1] into one single field
+        int op_type_1 = (int)ops[ops_len].op_type;
+        int op_type_2 = (int)ops[ops_len - 1].op_type;
+        if (op_type_1 >= op_type_2) {
+          op_assoc[op_type_2][op_type_1]++;
+        } else {
+          op_assoc[op_type_1][op_type_2]++;
+        }
+      }
+    }
+
     i++;
   }
 }
@@ -183,57 +207,40 @@ void parse(char *prog, int prog_len) {
 // TODO(feniljain): shift all operations to functions and try flamegraph
 int exec(char *prog, int prog_len) {
   DBG_PRINT(prog);
-  int i = 0, b_idx, val; // , cnt = 0;
-
-  // clock_t start, end;
-  // double cpu_time_used;
+  int i = 0, val;
 
   parse(prog, prog_len);
-  print_ops();
+  // print_op_assoc(); // This is for checking which all ops occur together
   fill_brackets_loc();
-  print_bracket_arr(-1, OPEN);
-  print_bracket_arr(-1, CLOSE);
 
   while (i <= ops_len) {
-    // cnt++;
     // start = clock();
     switch (ops[i].op_type) {
-    case INVALID:
-      ABORT("INVALID shouln't have leakded till here, there's a bug in parsing "
-            "code");
     case FWD:
-      b_idx = 0;
       pointer += ops[i].repeat; // TODO(feniljain): Add bound checks here
       break;
     case BWD:
-      b_idx = 1;
       pointer -= ops[i].repeat; // TODO(feniljain): Add bound checks here
       break;
     case INCREMENT:
-      b_idx = 2;
       val = (int)tape[pointer];
       val += ops[i].repeat; // TODO(feniljain): add int overflow check here
       tape[pointer] = (char)val;
       break;
     case DECREMENT:
-      b_idx = 3;
       val = (int)tape[pointer];
       val -= ops[i].repeat; // TODO(feniljain): add int undeflow check here
       tape[pointer] = (char)val;
       break;
     case OUTPUT:
-      b_idx = 4;
       printf("%c", tape[pointer]);
       break;
     case INPUT: {
-      b_idx = 5;
-      char ch;
-      scanf("%c", &ch);
+      char ch = (char)getchar();
       tape[pointer] = ch;
       break;
     }
     case JMP_IF_ZERO:
-      b_idx = 6;
       if (tape[pointer] == 0) {
         int idx = open_brackets_loc[i];
         if (idx == -1) {
@@ -246,7 +253,6 @@ int exec(char *prog, int prog_len) {
 
       break;
     case JMP_IF_NOT_ZERO: {
-      b_idx = 7;
       if (tape[pointer] != 0) {
         int idx = close_brackets_loc[i];
         if (idx == -1) {
@@ -259,21 +265,19 @@ int exec(char *prog, int prog_len) {
 
       break;
     }
+    case INVALID:
+      ABORT("INVALID shouln't have leakded till here, there's a bug in parsing "
+            "code");
     default:
       break;
     }
 
     i++;
 
-    (void)b_idx;
-
     // end = clock();
     // cpu_time_used = ((double)(end - start)) / CLOCKS_PER_SEC;
     // benchmark_results[b_idx][0]++;
     // benchmark_results[b_idx][1] += cpu_time_used;
-    // if (cnt == 200000000) {
-    //   break;
-    // }
   }
 
   // print_benchmark_results();
@@ -286,6 +290,7 @@ void reset(void) {
 
   ops_len = -1;
 
+  memset(op_assoc, 0, sizeof op_assoc);
   memset(open_brackets_loc, -1, sizeof open_brackets_loc);
   memset(close_brackets_loc, -1, sizeof close_brackets_loc);
 }

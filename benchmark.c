@@ -49,10 +49,9 @@ ProgStr read_file(char *file_path) {
   return prog_str;
 }
 
-int benchmark(void) {
+int benchmark(int iterations) {
   clock_t start, end;
   double cpu_time_used, avg_cpu_time_used = 0.0;
-	int iterations = 10;
 
   ProgStr prog_str = read_file("../programs/mandlebrot.bf");
   DBG_PRINTF("prog: %s: %d", prog_str.prog, prog_str.len);
@@ -67,7 +66,7 @@ int benchmark(void) {
 		end = clock();
 		cpu_time_used = ((double)(end - start)) / CLOCKS_PER_SEC;
 		avg_cpu_time_used += cpu_time_used;
-		DBG_PRINTF("benchmark::program took: %f secs in %d iteration", cpu_time_used, i);
+		DBG_PRINTF("benchmark::program took: %f secs in %d iteration", cpu_time_used, i + 1);
 
 		reset();
 	}
