@@ -53,7 +53,7 @@ int benchmark(int iterations) {
   clock_t start, end;
   double cpu_time_used, avg_cpu_time_used = 0.0;
 
-  ProgStr prog_str = read_file("../programs/mandlebrot.bf");
+  ProgStr prog_str = read_file("../programs/bitwidth.b");
   DBG_PRINTF("prog: %s: %d", prog_str.prog, prog_str.len);
 
 	for(int i = 0; i < iterations; i++) {
