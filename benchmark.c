@@ -39,7 +39,7 @@ ProgStr read_file(char *file_path) {
     // - converting linelen is safe cause we have checked it's greater than zero already
 		// - as we know memory regions are not overlapping, it's safe to use memcpy instead of memmove
     memcpy(prog + idx, buf, (size_t)linelen); 
-    idx += linelen;
+    idx += (int)linelen;
   }
 
   ProgStr prog_str;
@@ -53,7 +53,7 @@ int benchmark(int iterations) {
   clock_t start, end;
   double cpu_time_used, avg_cpu_time_used = 0.0;
 
-  ProgStr prog_str = read_file("../programs/bitwidth.b");
+  ProgStr prog_str = read_file("../programs/mandlebrot.b");
   DBG_PRINTF("prog: %s: %d", prog_str.prog, prog_str.len);
 
 	for(int i = 0; i < iterations; i++) {
