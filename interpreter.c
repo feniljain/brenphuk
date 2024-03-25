@@ -19,8 +19,8 @@ char tape[TAPE_SIZE];
 // storing offset of other bracket, which will be the
 // same for both [], just a matter of addition or
 // subtraction to pointer, but for now it's fine as it is
-int open_brackets_loc[TAPE_SIZE];
 int close_brackets_loc[TAPE_SIZE];
+int open_brackets_loc[TAPE_SIZE];
 
 enum Op_type {
   INVALID = 0,
@@ -62,10 +62,10 @@ void print_bracket_arr(int stop_len, enum Bracket br) {
 
   if (br == OPEN) {
     br_ch = '[';
-    arr = &open_brackets_loc[0];
+    arr = &close_brackets_loc[0];
   } else {
     br_ch = ']';
-    arr = &close_brackets_loc[0];
+    arr = &open_brackets_loc[0];
   }
 
   while (i < TAPE_SIZE) {
@@ -117,8 +117,8 @@ void fill_brackets_loc(void) {
       }
 
       if (brackets_depth == 0) {
-        open_brackets_loc[i] = j;
-        close_brackets_loc[j] = i;
+        close_brackets_loc[i] = j;
+        open_brackets_loc[j] = i;
         break;
       }
     }
@@ -240,9 +240,9 @@ int exec(char *prog, int prog_len) {
       tape[pointer] = ch;
       break;
     }
-    case JMP_IF_ZERO:
+    case JMP_IF_ZERO: {
       if (tape[pointer] == 0) {
-        int idx = open_brackets_loc[i];
+        int idx = close_brackets_loc[i];
         if (idx == -1) {
           DBG_PRINTF("[: got bracket_loc as -1 for i: %d", i);
           ABORT("invalid state");
@@ -252,9 +252,10 @@ int exec(char *prog, int prog_len) {
       }
 
       break;
+		}
     case JMP_IF_NOT_ZERO: {
       if (tape[pointer] != 0) {
-        int idx = close_brackets_loc[i];
+        int idx = open_brackets_loc[i];
         if (idx == -1) {
           DBG_PRINTF("]: got bracket_loc as -1 for i: %d", i);
           ABORT("invalid state");
@@ -291,6 +292,6 @@ void reset(void) {
   ops_len = -1;
 
   memset(op_assoc, 0, sizeof op_assoc);
-  memset(open_brackets_loc, -1, sizeof open_brackets_loc);
   memset(close_brackets_loc, -1, sizeof close_brackets_loc);
+  memset(open_brackets_loc, -1, sizeof open_brackets_loc);
 }
