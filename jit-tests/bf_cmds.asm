@@ -21,6 +21,5 @@ mov [rdi], rcx
 ; BWD
 sub rdi, 1
 
-; syscall
 cmp rdi, 0
 jnz loop_start 
