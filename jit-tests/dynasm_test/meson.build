@@ -8,19 +8,19 @@ inc = include_directories('../../dynasm-doc', '../../')
 # This adds the clang format file to the build directory
 configure_file(input : '.clang-format',
                output : '.clang-format',
-	       copy: true)
+							 copy: true)
 
 run_target('format',
   command : ['clang-format-13','-i','-style=file', ['dynasm_test.c']])
 
 run_command('clang-format-13','-i','-style=file', 'dynasm_test.c')
 
-run_command('./minilua','../../dynasm-doc/luajit-2.0/dynasm/dynasm.lua','-o', 'dynasm_test.posix64.c', 'dynasm_test.c')
+run_command('./minilua','../dynasm-doc/luajit-2.0/dynasm/dynasm.lua','-o', 'dynasm_test.posix64.c', 'dynasm_test.c')
 
 # TODO: Add all cflags
 executable('dynasm_test',
            'dynasm_test.posix64.c',
            install : true,
            include_directories: inc,
-					c_args: ['-Wno-implicit-fallthrough'],
+ 					 c_args: ['-Wno-implicit-fallthrough', '-g'],
 )

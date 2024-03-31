@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <assert.h>
 #include <sys/mman.h>
 
 #include "luajit-2.0/dynasm/dasm_proto.h"
@@ -6,16 +7,18 @@
 
 #include "debug.h"
 
+#define DASM_CHECKS 1 // debugging mode for dynasm
+
 typedef struct exec_state
 {
   const char* str;
-  void (*put_ch)(const char*);
+  void (*put)(const char*);
 } exec_state_t;
 
 static void* link_and_encode(dasm_State** d) {
 	size_t size;
 	void *buf;
-	dasm_link(d, &size);
+	assert(dasm_link(d, &size) == 0);
 	buf = mmap(0, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 	dasm_encode(d, buf);
 
@@ -34,51 +37,53 @@ static void* link_and_encode(dasm_State** d) {
 
 static void(* exec()) (exec_state_t*) {
 	dasm_State* d;
-	unsigned npc = 8; // number of dynamic labels involved
 
-	| .arch x64
+	|.arch x64
 
-	|.section code // specify what all different sections you need
-	dasm_init(&d, DASM_MAXSECTION);
+	dasm_init(&d, 1);
 
 	|.globals lbl_
 	void* labels[lbl__MAX];
 	dasm_setupglobal(&d, labels, lbl__MAX);
 
-	|.actionlist bf_actions
-	dasm_setup(&d, bf_actions);
+	|.actionlist actions
+	dasm_setup(&d, actions);
 
-	dasm_growpc(&d, npc);
+	|.define aState, r12
+	|.type state, exec_state_t, aState
 
-	| .type state, exec_state_t, rdi
+	// assert(dasm_checkstep(Dst, 0) == 0);
 
 	dasm_State** Dst = &d;
-	|.code
+	// assert(dasm_checkstep(Dst, 0) == 0);
 	|->start:
-	// | mov rax, 1
-	// | mov rsi, 1
-	// | mov rdi, state->str
-	// | mov rdx, 18
+	// assert(dasm_checkstep(Dst, 0) == 0);
 
-	| call aword state->put_ch
-	// | syscall
+	// | mov rdi, state->str
+	| mov rdi, aState
+	| call aword state->put
+	// assert(dasm_checkstep(Dst, 0) == 0);
 
 	| ret
+	// assert(dasm_checkstep(Dst, 0) == 0);
 
 	link_and_encode(&d);
 	dasm_free(&d);
 	return (void(*)(exec_state_t*))labels[lbl_start];
 }
 
-static void put_char(const char *s) {
+static void put(const char *s) {
 	printf("%s", s);
 }
 
 int main() {
+
 	exec_state_t state;
 
 	state.str = "hello world\n";
-	state.put_ch = put_char;
+	state.put = put;
+
+	// put(state.str);
 	exec()(&state);
 
 	return 0;

@@ -1,6 +1,6 @@
 **/build/
 *.swp
 eli/
-dynasm-doc/
+**/dynasm-doc/
 **/*.o
 **/a.out

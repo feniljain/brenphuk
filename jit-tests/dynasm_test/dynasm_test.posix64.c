@@ -7,6 +7,7 @@
 
 #line 1 "dynasm_test.c"
 #include <stdio.h>
+#include <assert.h>
 #include <sys/mman.h>
 
 #include "luajit-2.0/dynasm/dasm_proto.h"
@@ -14,16 +15,18 @@
 
 #include "debug.h"
 
+#define DASM_CHECKS 1 // debugging mode for dynasm
+
 typedef struct exec_state
 {
   const char* str;
-  void (*put_ch)(const char*);
+  void (*put)(const char*);
 } exec_state_t;
 
 static void* link_and_encode(dasm_State** d) {
 	size_t size;
 	void *buf;
-	dasm_link(d, &size);
+	assert(dasm_link(d, &size) == 0);
 	buf = mmap(0, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 	dasm_encode(d, buf);
 
@@ -42,80 +45,75 @@ static void* link_and_encode(dasm_State** d) {
 
 static void(* exec()) (exec_state_t*) {
 	dasm_State* d;
-	unsigned npc = 8; // number of dynamic labels involved
 
-	//| .arch x64
+	//|.arch x64
 #if DASM_VERSION != 10400
 #error "Version mismatch between DynASM and included encoding engine"
 #endif
-#line 40 "dynasm_test.c"
-
-	//|.section code // specify what all different sections you need
-#define DASM_SECTION_CODE	0
-#define DASM_MAXSECTION		1
 #line 42 "dynasm_test.c"
-	dasm_init(&d, DASM_MAXSECTION);
+
+	dasm_init(&d, 1);
 
 	//|.globals lbl_
 enum {
   lbl_start,
   lbl__MAX
 };
-#line 45 "dynasm_test.c"
+#line 46 "dynasm_test.c"
 	void* labels[lbl__MAX];
 	dasm_setupglobal(&d, labels, lbl__MAX);
 
-	//|.actionlist bf_actions
-static const unsigned char bf_actions[17] = {
-  254,0,248,10,255,72,139,191,233,255,252,255,151,233,255,195,255
+	//|.actionlist actions
+static const unsigned char actions[16] = {
+  248,10,255,76,137,231,65,252,255,148,253,36,233,255,195,255
 };
 
-#line 49 "dynasm_test.c"
-	dasm_setup(&d, bf_actions);
+#line 50 "dynasm_test.c"
+	dasm_setup(&d, actions);
 
-	dasm_growpc(&d, npc);
-
-	//| .type state, exec_state_t, rdi
+	//|.define aState, r12
+	//|.type state, exec_state_t, aState
 #define Dt1(_V) (int)(ptrdiff_t)&(((exec_state_t *)0)_V)
 #line 54 "dynasm_test.c"
 
-	dasm_State** Dst = &d;
-	//|.code
-	dasm_put(Dst, 0);
-#line 57 "dynasm_test.c"
-	//|->start:
-	dasm_put(Dst, 2);
-#line 58 "dynasm_test.c"
-	// | mov rax, 1
-	// | mov rsi, 1
-	//| mov rdi, state->str
-	dasm_put(Dst, 5, Dt1(->str));
-#line 61 "dynasm_test.c"
-	// | mov rdx, 18
+	// assert(dasm_checkstep(Dst, 0) == 0);
 
-	//| call aword state->put_ch
-	dasm_put(Dst, 10, Dt1(->put_ch));
-#line 64 "dynasm_test.c"
-	// | syscall
+	dasm_State** Dst = &d;
+	// assert(dasm_checkstep(Dst, 0) == 0);
+	//|->start:
+	dasm_put(Dst, 0);
+#line 60 "dynasm_test.c"
+	// assert(dasm_checkstep(Dst, 0) == 0);
+
+	// | mov rdi, state->str
+	//| mov rdi, aState
+	//| call aword state->put
+	dasm_put(Dst, 3, Dt1(->put));
+#line 65 "dynasm_test.c"
+	// assert(dasm_checkstep(Dst, 0) == 0);
 
 	//| ret
-	dasm_put(Dst, 15);
-#line 67 "dynasm_test.c"
+	dasm_put(Dst, 14);
+#line 68 "dynasm_test.c"
+	// assert(dasm_checkstep(Dst, 0) == 0);
 
 	link_and_encode(&d);
 	dasm_free(&d);
 	return (void(*)(exec_state_t*))labels[lbl_start];
 }
 
-static void put_char(const char *s) {
+static void put(const char *s) {
 	printf("%s", s);
 }
 
 int main() {
+
 	exec_state_t state;
 
 	state.str = "hello world\n";
-	state.put_ch = put_char;
+	state.put = &put;
+
+	// put(state.str);
 	exec()(&state);
 
 	return 0;

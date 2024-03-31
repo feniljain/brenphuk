@@ -1,12 +1,10 @@
 #include<stdio.h>
 
-int main() {
-	int i;
-	scanf("%d", &i);
+static void put(const char* s) {
+	printf("%s", s);
+}
 
-	if(i == -1) {
-		return 0;
-	} else {
-		return 1;
-	}
+int main() {
+	put("namastey duniyaa!\n");
+	return 0;
 }
