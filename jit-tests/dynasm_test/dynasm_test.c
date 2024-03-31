@@ -11,80 +11,86 @@
 
 typedef struct exec_state
 {
-  const char* str;
-  void (*put)(const char*);
+  // const char* str;
+  // void (*put)(const char*);
+  int num;
 } exec_state_t;
 
 static void* link_and_encode(dasm_State** d) {
 	size_t size;
-	void *buf;
-	assert(dasm_link(d, &size) == 0);
-	buf = mmap(0, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+
+	int result = dasm_link(d, &size);
+	assert(result == DASM_S_OK);
+
+	char* buf = mmap(0, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+	assert(buf != MAP_FAILED);
+
 	dasm_encode(d, buf);
+	dasm_free(d);
+
+	result = mprotect(buf, size, PROT_EXEC | PROT_READ);
+	assert(result == 0);
 
 	FILE *fp = fopen("/tmp/jit-output", "w+");
 	if(!fp) {
 		ABORT("file not found");
 	}
-
 	fwrite(buf, size, 1, fp);
-
 	fclose(fp);
 
-	mprotect(buf, size, PROT_READ | PROT_EXEC);
 	return buf;
 }
 
-static void(* exec()) (exec_state_t*) {
-	dasm_State* d;
-
+static void* exec(int num) {
 	|.arch x64
-
-	dasm_init(&d, 1);
-
-	|.globals lbl_
-	void* labels[lbl__MAX];
-	dasm_setupglobal(&d, labels, lbl__MAX);
-
 	|.actionlist actions
+
+	dasm_State* d;
+	dasm_State** Dst = &d;
+
+	dasm_init(Dst, 1);
+
 	dasm_setup(&d, actions);
 
-	|.define aState, r12
-	|.type state, exec_state_t, aState
+	// |.define aState, r12
+	// |.type state, exec_state_t, aState
 
 	// assert(dasm_checkstep(Dst, 0) == 0);
 
-	dasm_State** Dst = &d;
 	// assert(dasm_checkstep(Dst, 0) == 0);
-	|->start:
+	// |->start:
 	// assert(dasm_checkstep(Dst, 0) == 0);
 
 	// | mov rdi, state->str
-	| mov rdi, aState
-	| call aword state->put
+	// | mov rdi, aState
+	// | call aword state->put
 	// assert(dasm_checkstep(Dst, 0) == 0);
 
+	| mov eax, num // TODO: try converting this to use struct state
 	| ret
 	// assert(dasm_checkstep(Dst, 0) == 0);
 
-	link_and_encode(&d);
-	dasm_free(&d);
-	return (void(*)(exec_state_t*))labels[lbl_start];
+	int (*fptr)(exec_state_t*) = link_and_encode(&d);
+	return fptr;
+	// return (void(*)(exec_state_t*))labels[lbl_start];
 }
 
-static void put(const char *s) {
-	printf("%s", s);
-}
+// static void put(const char* s) {
+// 	printf("%s", s);
+// }
 
 int main() {
-
 	exec_state_t state;
 
-	state.str = "hello world\n";
-	state.put = put;
+	// state.str = "hello world\n";
+	// state.put = put;
 
+	state.num = 7;
 	// put(state.str);
-	exec()(&state);
+	int (*fptr)() = exec(state.num);
+	int ret = fptr(&state);
+
+	assert(ret == state.num);
 
 	return 0;
 }
