@@ -53,9 +53,7 @@ static void* exec(int num) {
 	dasm_setup(&d, actions);
 
 	// |.define aState, r12
-	// |.type state, exec_state_t, aState
-
-	// assert(dasm_checkstep(Dst, 0) == 0);
+	// |.type state, exec_state_t, rdi
 
 	// assert(dasm_checkstep(Dst, 0) == 0);
 	// |->start:
@@ -66,11 +64,12 @@ static void* exec(int num) {
 	// | call aword state->put
 	// assert(dasm_checkstep(Dst, 0) == 0);
 
-	| mov eax, num // TODO: try converting this to use struct state
+	| add rdi, num
+	| mov rax, rdi // TODO: try converting this to use struct state
 	| ret
 	// assert(dasm_checkstep(Dst, 0) == 0);
 
-	int (*fptr)(exec_state_t*) = link_and_encode(&d);
+	int (*fptr)(int) = link_and_encode(&d);
 	return fptr;
 	// return (void(*)(exec_state_t*))labels[lbl_start];
 }
@@ -88,9 +87,16 @@ int main() {
 	state.num = 7;
 	// put(state.str);
 	int (*fptr)() = exec(state.num);
-	int ret = fptr(&state);
+	int ret = fptr(state.num);
 
-	assert(ret == state.num);
+	assert(ret == state.num * 2);
 
 	return 0;
 }
+
+// [X] 1. normal integer use in jit code
+// [X] 2. passing integer as function arg to add it with initial number
+// [] 3. passing a pointer to a number and adding that with initial number
+// [ ] 4. passing a function pointer and calling it to print new number
+// [ ] 5. passing a number in a struct and adding that with initial number
+// [ ] 6. passing a state struct with char and printing that with a passed function pointer

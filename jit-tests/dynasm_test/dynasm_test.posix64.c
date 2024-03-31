@@ -56,8 +56,8 @@ static void* exec(int num) {
 #endif
 #line 46 "dynasm_test.c"
 	//|.actionlist actions
-static const unsigned char actions[4] = {
-  184,237,195,255
+static const unsigned char actions[10] = {
+  72,129,199,239,72,137,252,248,195,255
 };
 
 #line 47 "dynasm_test.c"
@@ -70,7 +70,7 @@ static const unsigned char actions[4] = {
 	dasm_setup(&d, actions);
 
 	// |.define aState, r12
-	// |.type state, exec_state_t, aState
+	// |.type state, exec_state_t, rdi
 
 	// assert(dasm_checkstep(Dst, 0) == 0);
 
@@ -83,13 +83,14 @@ static const unsigned char actions[4] = {
 	// | call aword state->put
 	// assert(dasm_checkstep(Dst, 0) == 0);
 
-	//| mov eax, num // TODO: try converting this to use struct state
+	//| add rdi, num
+	//| mov rax, rdi // TODO: try converting this to use struct state
 	//| ret
 	dasm_put(Dst, 0, num);
-#line 71 "dynasm_test.c"
+#line 72 "dynasm_test.c"
 	// assert(dasm_checkstep(Dst, 0) == 0);
 
-	int (*fptr)(exec_state_t*) = link_and_encode(&d);
+	int (*fptr)(int) = link_and_encode(&d);
 	return fptr;
 	// return (void(*)(exec_state_t*))labels[lbl_start];
 }
@@ -107,9 +108,9 @@ int main() {
 	state.num = 7;
 	// put(state.str);
 	int (*fptr)() = exec(state.num);
-	int ret = fptr(&state);
+	int ret = fptr(state.num);
 
-	assert(ret == state.num);
+	assert(ret == state.num * 2);
 
 	return 0;
 }
