@@ -56,8 +56,8 @@ static void* exec(int num) {
 #endif
 #line 46 "dynasm_test.c"
 	//|.actionlist actions
-static const unsigned char actions[10] = {
-  72,129,199,239,72,137,252,248,195,255
+static const unsigned char actions[13] = {
+  72,139,63,72,129,199,239,72,137,252,248,195,255
 };
 
 #line 47 "dynasm_test.c"
@@ -73,8 +73,6 @@ static const unsigned char actions[10] = {
 	// |.type state, exec_state_t, rdi
 
 	// assert(dasm_checkstep(Dst, 0) == 0);
-
-	// assert(dasm_checkstep(Dst, 0) == 0);
 	// |->start:
 	// assert(dasm_checkstep(Dst, 0) == 0);
 
@@ -83,14 +81,15 @@ static const unsigned char actions[10] = {
 	// | call aword state->put
 	// assert(dasm_checkstep(Dst, 0) == 0);
 
+	//| mov rdi, [rdi]
 	//| add rdi, num
-	//| mov rax, rdi // TODO: try converting this to use struct state
+	//| mov rax, rdi
 	//| ret
 	dasm_put(Dst, 0, num);
-#line 72 "dynasm_test.c"
+#line 71 "dynasm_test.c"
 	// assert(dasm_checkstep(Dst, 0) == 0);
 
-	int (*fptr)(int) = link_and_encode(&d);
+	int (*fptr)(int*) = link_and_encode(&d);
 	return fptr;
 	// return (void(*)(exec_state_t*))labels[lbl_start];
 }
@@ -107,10 +106,17 @@ int main() {
 
 	state.num = 7;
 	// put(state.str);
-	int (*fptr)() = exec(state.num);
-	int ret = fptr(state.num);
+	int (*fptr)(int*) = exec(state.num);
+	int ret = fptr(&state.num);
 
 	assert(ret == state.num * 2);
 
 	return 0;
 }
+
+// [X] 1. normal integer use in jit code
+// [X] 2. passing integer as function arg to add it with initial number
+// [ ] 3. passing a pointer to a number and adding that with initial number
+// [ ] 4. passing a function pointer and calling it to print new number
+// [ ] 5. passing a number in a struct and adding that with initial number
+// [ ] 6. passing a state struct with char and printing that with a passed function pointer
