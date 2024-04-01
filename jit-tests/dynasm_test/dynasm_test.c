@@ -64,20 +64,30 @@ static void* exec(int num) {
 	// | call aword state->put
 	// assert(dasm_checkstep(Dst, 0) == 0);
 
+	| push rbp
+	| mov rbp, rsp
+	| sub rsp, 0x4 // 0x4 for 4 bytes of num ( int type )?
+
 	| mov rdi, [rdi]
 	| add rdi, num
-	| mov rax, rdi
+	| mov rdx, rdi
+
+	| call qword ptr rsi
+
+	| mov rax, rdx
+
+	| leave
 	| ret
 	// assert(dasm_checkstep(Dst, 0) == 0);
 
-	int (*fptr)(int*) = link_and_encode(&d);
+	int (*fptr)(int*, void (*)(int)) = link_and_encode(&d);
 	return fptr;
 	// return (void(*)(exec_state_t*))labels[lbl_start];
 }
 
-// static void put(const char* s) {
-// 	printf("%s", s);
-// }
+static void put(int num) {
+	fprintf(1, "%d", num);
+}
 
 int main() {
 	exec_state_t state;
@@ -87,8 +97,8 @@ int main() {
 
 	state.num = 7;
 	// put(state.str);
-	int (*fptr)(int*) = exec(state.num);
-	int ret = fptr(&state.num);
+	int (*fptr)(int*, void (*)(int)) = exec(state.num);
+	int ret = fptr(&state.num, put);
 
 	assert(ret == state.num * 2);
 

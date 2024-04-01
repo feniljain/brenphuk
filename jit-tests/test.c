@@ -1,10 +1,14 @@
 #include<stdio.h>
 
-static void put(const char* s) {
-	printf("%s", s);
+static void put(int num) {
+	printf("%d\n", num);
+}
+
+static void put_wrap(void (put)(int)) {
+	put(5);
 }
 
 int main() {
-	put("namastey duniyaa!\n");
+	put_wrap(put);
 	return 0;
 }
