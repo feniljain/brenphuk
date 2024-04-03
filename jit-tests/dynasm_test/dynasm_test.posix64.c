@@ -56,8 +56,8 @@ static void* exec(int num) {
 #endif
 #line 46 "dynasm_test.c"
 	//|.actionlist actions
-static const unsigned char actions[18] = {
-  72,139,63,72,129,199,239,255,252,255,214,255,72,137,252,248,195,255
+static const unsigned char actions[19] = {
+  72,139,63,72,129,199,239,255,252,255,214,255,72,137,252,248,255,195,255
 };
 
 #line 47 "dynasm_test.c"
@@ -81,19 +81,28 @@ static const unsigned char actions[18] = {
 	// | call aword state->put
 	// assert(dasm_checkstep(Dst, 0) == 0);
 
+	// | push rbp
+	// | mov rbp, rsp
+	// | sub rsp, 0x4 // 0x4 for 4 bytes of num ( int type )?
+
 	//| mov rdi, [rdi]
 	//| add rdi, num
 	dasm_put(Dst, 0, num);
-#line 69 "dynasm_test.c"
+#line 73 "dynasm_test.c"
+	// | mov rdx, rdi
 
 	//| call rsi
 	dasm_put(Dst, 8);
-#line 71 "dynasm_test.c"
+#line 76 "dynasm_test.c"
 
 	//| mov rax, rdi
-	//| ret
 	dasm_put(Dst, 12);
-#line 74 "dynasm_test.c"
+#line 78 "dynasm_test.c"
+
+	// | leave
+	//| ret
+	dasm_put(Dst, 17);
+#line 81 "dynasm_test.c"
 	// assert(dasm_checkstep(Dst, 0) == 0);
 
 	int (*fptr)(int*, void (*)(int)) = link_and_encode(&d);
@@ -102,7 +111,7 @@ static const unsigned char actions[18] = {
 }
 
 static void put(int num) {
-	printf("%d", num);
+	fprintf(stdout, "%d", num);
 }
 
 int main() {

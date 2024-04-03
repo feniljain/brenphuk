@@ -15,7 +15,7 @@ run_target('format',
 
 run_command('clang-format-13','-i','-style=file', 'dynasm_test.c')
 
-run_command('./minilua','../dynasm-doc/luajit-2.0/dynasm/dynasm.lua','-o', 'dynasm_test.posix64.c', 'dynasm_test.c')
+run_command('./minilua','../dynasm-doc/luajit-2.0/dynasm/dynasm.lua','-o', 'dynasm_test.posix64.c', 'dynasm_test.c', check: true)
 
 # TODO: Add all cflags
 executable('dynasm_test',

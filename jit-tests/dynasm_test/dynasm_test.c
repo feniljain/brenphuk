@@ -64,19 +64,19 @@ static void* exec(int num) {
 	// | call aword state->put
 	// assert(dasm_checkstep(Dst, 0) == 0);
 
-	| push rbp
-	| mov rbp, rsp
-	| sub rsp, 0x4 // 0x4 for 4 bytes of num ( int type )?
+	// | push rbp
+	// | mov rbp, rsp
+	// | sub rsp, 0x4 // 0x4 for 4 bytes of num ( int type )?
 
 	| mov rdi, [rdi]
 	| add rdi, num
 	| mov rdx, rdi
 
-	| call qword ptr rsi
+	| call rsi
 
 	| mov rax, rdx
 
-	| leave
+	// | leave
 	| ret
 	// assert(dasm_checkstep(Dst, 0) == 0);
 
@@ -86,7 +86,7 @@ static void* exec(int num) {
 }
 
 static void put(int num) {
-	fprintf(1, "%d", num);
+	fprintf(stdout, "%d", num);
 }
 
 int main() {

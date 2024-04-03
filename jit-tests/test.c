@@ -1,7 +1,7 @@
 #include<stdio.h>
 
 static void put(int num) {
-	printf("%d\n", num);
+	fprintf(stderr, "%d\n", num);
 }
 
 static void put_wrap(void (put)(int)) {
