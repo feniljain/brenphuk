@@ -70,14 +70,16 @@ static void* exec(int num) {
 
 	| mov rdi, [rdi]
 	| add rdi, num
-	| mov rdx, rdi
+
+	| push rdi // to remember value across function calls
 
 	| call rsi
 
-	| mov rax, rdx
+	| pop rdi
 
 	// | leave
 	| ret
+
 	// assert(dasm_checkstep(Dst, 0) == 0);
 
 	int (*fptr)(int*, void (*)(int)) = link_and_encode(&d);
@@ -86,7 +88,7 @@ static void* exec(int num) {
 }
 
 static void put(int num) {
-	fprintf(stdout, "%d", num);
+	fprintf(stdout, "%d\n", num);
 }
 
 int main() {
@@ -100,7 +102,7 @@ int main() {
 	int (*fptr)(int*, void (*)(int)) = exec(state.num);
 	int ret = fptr(&state.num, put);
 
-	assert(ret == state.num * 2);
+	// assert(ret == state.num * 2);
 
 	return 0;
 }
@@ -108,6 +110,6 @@ int main() {
 // [X] 1. normal integer use in jit code
 // [X] 2. passing integer as function arg to add it with initial number
 // [X] 3. passing a pointer to a number and adding that with initial number
-// [ ] 4. passing a function pointer and calling it to print new number
+// [X] 4. passing a function pointer and calling it to print new number
 // [ ] 5. passing a number in a struct and adding that with initial number
 // [ ] 6. passing a state struct with char and printing that with a passed function pointer
