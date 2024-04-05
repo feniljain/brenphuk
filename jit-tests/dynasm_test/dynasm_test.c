@@ -55,7 +55,7 @@ static void* exec(int num) {
 	| .define aux2Reg, r11
 	| .define returnReg, rax
 
-	|.actionlist actions
+	| .actionlist actions
 
 	dasm_State* d;
 	dasm_State** Dst = &d;
@@ -67,8 +67,12 @@ static void* exec(int num) {
 	| .type state, exec_state_t, arg1Reg
 
 	| mov aux1Reg, num
-	| add aux1Reg, state:arg1Reg->num
-	| add aux1Reg, state:arg1Reg->num1
+
+	if(num >= 7) {
+		| add aux1Reg, state:arg1Reg->num
+	} else {
+		| add aux1Reg, state:arg1Reg->num1
+	}
 
 	| push aux1Reg
 
@@ -102,7 +106,11 @@ int main() {
 	int (*fptr)(exec_state_t*) = exec(num);
 	int ret = fptr(&state);
 
-	assert(ret == num + state.num + state.num1);
+	if(num >= 7) {
+		assert(ret == num + state.num);
+	} else {
+		assert(ret == num + state.num1);
+	}
 
 	return 0;
 }
@@ -114,4 +122,4 @@ int main() {
 // [X] 5. passing a number in a struct and adding that with initial number
 // [X] 6. passing a state struct with char and printing that with a passed function pointer
 // [X] 7. use .define for regs
-// [ ] 8. construct a dynamic jump point and jump to it
+// [ ] 8. construct a dynamic jump point (dynamic here means addr changes with different jit configs) and jump to it
