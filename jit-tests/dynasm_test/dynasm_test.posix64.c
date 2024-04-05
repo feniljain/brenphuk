@@ -22,7 +22,7 @@ typedef struct exec_state
   // const char* str;
   // void (*put)(const char*);
   int num;
-  // int num1;
+  int num1;
 } exec_state_t;
 
 static void* link_and_encode(dasm_State** d) {
@@ -57,8 +57,8 @@ static void* exec(int num) {
 #endif
 #line 47 "dynasm_test.c"
 	//|.actionlist actions
-static const unsigned char actions[18] = {
-  72,139,63,72,129,199,239,255,87,255,252,255,214,255,88,255,195,255
+static const unsigned char actions[19] = {
+  72,199,198,237,72,3,183,233,72,139,135,233,72,1,252,240,255,195,255
 };
 
 #line 48 "dynasm_test.c"
@@ -71,7 +71,9 @@ static const unsigned char actions[18] = {
 	dasm_setup(&d, actions);
 
 	// |.define aState, r12
-	// |.type state, exec_state_t, rdi
+	//|.type state, exec_state_t, rdi
+#define Dt1(_V) (int)(ptrdiff_t)&(((exec_state_t *)0)_V)
+#line 58 "dynasm_test.c"
 
 	// assert(dasm_checkstep(Dst, 0) == 0);
 	// |->start:
@@ -86,38 +88,28 @@ static const unsigned char actions[18] = {
 	// | mov rbp, rsp
 	// | sub rsp, 0x4 // 0x4 for 4 bytes of num ( int type )?
 
-	//| mov rdi, [rdi]
-	//| add rdi, num
-	dasm_put(Dst, 0, num);
-#line 74 "dynasm_test.c"
-
-	//| push rdi // to remember value across function calls
-	dasm_put(Dst, 8);
+	//| mov rsi, num
+	//| add rsi, state:rdi->num
+	//| mov rax, state:rdi->num1
+	//| add rax, rsi
+	dasm_put(Dst, 0, num, Dt1(->num), Dt1(->num1));
 #line 76 "dynasm_test.c"
-
-	//| call rsi
-	dasm_put(Dst, 10);
-#line 78 "dynasm_test.c"
-
-	//| pop rax
-	dasm_put(Dst, 14);
-#line 80 "dynasm_test.c"
 
 	// | leave
 	//| ret
-	dasm_put(Dst, 16);
-#line 83 "dynasm_test.c"
+	dasm_put(Dst, 17);
+#line 79 "dynasm_test.c"
 
 	// assert(dasm_checkstep(Dst, 0) == 0);
 
-	int (*fptr)(int*, void (*)(int)) = link_and_encode(&d);
+	int (*fptr)(exec_state_t*) = link_and_encode(&d);
 	return fptr;
 	// return (void(*)(exec_state_t*))labels[lbl_start];
 }
 
-static void put(int num) {
-	fprintf(stdout, "%d\n", num);
-}
+// static void put(int num) {
+// 	fprintf(stdout, "%d\n", num);
+// }
 
 int main() {
 	exec_state_t state;
@@ -126,12 +118,11 @@ int main() {
 	// state.put = put;
 
 	state.num = 7;
-	// state.num1 = 8;
-	// put(state.str);
-	int (*fptr)(int*, void (*)(int)) = exec(state.num);
-	int ret = fptr(&state.num, put);
+	state.num1 = 8;
+	int (*fptr)(exec_state_t*) = exec(state.num);
+	int ret = fptr(&state);
 
-	assert(ret == state.num * 2);
+	assert(ret == state.num + state.num + state.num1);
 
 	return 0;
 }
@@ -140,5 +131,5 @@ int main() {
 // [X] 2. passing integer as function arg to add it with initial number
 // [X] 3. passing a pointer to a number and adding that with initial number
 // [X] 4. passing a function pointer and calling it to print new number
-// [ ] 5. passing a number in a struct and adding that with initial number
+// [X] 5. passing a number in a struct and adding that with initial number
 // [ ] 6. passing a state struct with char and printing that with a passed function pointer

@@ -14,7 +14,7 @@ typedef struct exec_state
   // const char* str;
   // void (*put)(const char*);
   int num;
-  // int num1;
+  int num1;
 } exec_state_t;
 
 static void* link_and_encode(dasm_State** d) {
@@ -54,7 +54,7 @@ static void* exec(int num) {
 	dasm_setup(&d, actions);
 
 	// |.define aState, r12
-	// |.type state, exec_state_t, rdi
+	|.type state, exec_state_t, rdi
 
 	// assert(dasm_checkstep(Dst, 0) == 0);
 	// |->start:
@@ -69,28 +69,24 @@ static void* exec(int num) {
 	// | mov rbp, rsp
 	// | sub rsp, 0x4 // 0x4 for 4 bytes of num ( int type )?
 
-	| mov rdi, [rdi]
-	| add rdi, num
-
-	| push rdi // to remember value across function calls
-
-	| call rsi
-
-	| pop rax
+	| mov rsi, num
+	| add rsi, state:rdi->num
+	| mov rax, state:rdi->num1
+	| add rax, rsi
 
 	// | leave
 	| ret
 
 	// assert(dasm_checkstep(Dst, 0) == 0);
 
-	int (*fptr)(int*, void (*)(int)) = link_and_encode(&d);
+	int (*fptr)(exec_state_t*) = link_and_encode(&d);
 	return fptr;
 	// return (void(*)(exec_state_t*))labels[lbl_start];
 }
 
-static void put(int num) {
-	fprintf(stdout, "%d\n", num);
-}
+// static void put(int num) {
+// 	fprintf(stdout, "%d\n", num);
+// }
 
 int main() {
 	exec_state_t state;
@@ -99,12 +95,11 @@ int main() {
 	// state.put = put;
 
 	state.num = 7;
-	// state.num1 = 8;
-	// put(state.str);
-	int (*fptr)(int*, void (*)(int)) = exec(state.num);
-	int ret = fptr(&state.num, put);
+	state.num1 = 8;
+	int (*fptr)(exec_state_t*) = exec(state.num);
+	int ret = fptr(&state);
 
-	assert(ret == state.num * 2);
+	assert(ret == state.num + state.num + state.num1);
 
 	return 0;
 }
@@ -113,5 +108,5 @@ int main() {
 // [X] 2. passing integer as function arg to add it with initial number
 // [X] 3. passing a pointer to a number and adding that with initial number
 // [X] 4. passing a function pointer and calling it to print new number
-// [ ] 5. passing a number in a struct and adding that with initial number
+// [X] 5. passing a number in a struct and adding that with initial number
 // [ ] 6. passing a state struct with char and printing that with a passed function pointer
