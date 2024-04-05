@@ -22,6 +22,7 @@ typedef struct exec_state
   // const char* str;
   // void (*put)(const char*);
   int num;
+  // int num1;
 } exec_state_t;
 
 static void* link_and_encode(dasm_State** d) {
@@ -54,13 +55,13 @@ static void* exec(int num) {
 #if DASM_VERSION != 10400
 #error "Version mismatch between DynASM and included encoding engine"
 #endif
-#line 46 "dynasm_test.c"
+#line 47 "dynasm_test.c"
 	//|.actionlist actions
 static const unsigned char actions[18] = {
-  72,139,63,72,129,199,239,255,87,255,252,255,214,255,95,255,195,255
+  72,139,63,72,129,199,239,255,87,255,252,255,214,255,88,255,195,255
 };
 
-#line 47 "dynasm_test.c"
+#line 48 "dynasm_test.c"
 
 	dasm_State* d;
 	dasm_State** Dst = &d;
@@ -83,15 +84,14 @@ static const unsigned char actions[18] = {
 
 	// | push rbp
 	// | mov rbp, rsp
-	// | sub rsp, 0x4 // 0x8 for 8 bytes of num ( int type )?
+	// | sub rsp, 0x4 // 0x4 for 4 bytes of num ( int type )?
 
 	//| mov rdi, [rdi]
 	//| add rdi, num
 	dasm_put(Dst, 0, num);
-#line 73 "dynasm_test.c"
+#line 74 "dynasm_test.c"
 
-	// | push rdi // once for ourselves
-	//| push rdi // once for variadic args for fprintf
+	//| push rdi // to remember value across function calls
 	dasm_put(Dst, 8);
 #line 76 "dynasm_test.c"
 
@@ -99,7 +99,7 @@ static const unsigned char actions[18] = {
 	dasm_put(Dst, 10);
 #line 78 "dynasm_test.c"
 
-	//| pop rdi
+	//| pop rax
 	dasm_put(Dst, 14);
 #line 80 "dynasm_test.c"
 
@@ -126,11 +126,12 @@ int main() {
 	// state.put = put;
 
 	state.num = 7;
+	// state.num1 = 8;
 	// put(state.str);
 	int (*fptr)(int*, void (*)(int)) = exec(state.num);
 	int ret = fptr(&state.num, put);
 
-	// assert(ret == state.num * 2);
+	assert(ret == state.num * 2);
 
 	return 0;
 }
@@ -138,6 +139,6 @@ int main() {
 // [X] 1. normal integer use in jit code
 // [X] 2. passing integer as function arg to add it with initial number
 // [X] 3. passing a pointer to a number and adding that with initial number
-// [ ] 4. passing a function pointer and calling it to print new number
+// [X] 4. passing a function pointer and calling it to print new number
 // [ ] 5. passing a number in a struct and adding that with initial number
 // [ ] 6. passing a state struct with char and printing that with a passed function pointer

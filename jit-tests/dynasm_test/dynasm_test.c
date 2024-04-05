@@ -14,6 +14,7 @@ typedef struct exec_state
   // const char* str;
   // void (*put)(const char*);
   int num;
+  // int num1;
 } exec_state_t;
 
 static void* link_and_encode(dasm_State** d) {
@@ -75,7 +76,7 @@ static void* exec(int num) {
 
 	| call rsi
 
-	| pop rdi
+	| pop rax
 
 	// | leave
 	| ret
@@ -98,11 +99,12 @@ int main() {
 	// state.put = put;
 
 	state.num = 7;
+	// state.num1 = 8;
 	// put(state.str);
 	int (*fptr)(int*, void (*)(int)) = exec(state.num);
 	int ret = fptr(&state.num, put);
 
-	// assert(ret == state.num * 2);
+	assert(ret == state.num * 2);
 
 	return 0;
 }
