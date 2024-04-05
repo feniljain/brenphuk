@@ -12,7 +12,7 @@
 typedef struct exec_state
 {
   // const char* str;
-  // void (*put)(const char*);
+  void (*put)(const char*);
   int num;
   int num1;
 } exec_state_t;
@@ -69,12 +69,18 @@ static void* exec(int num) {
 	// | mov rbp, rsp
 	// | sub rsp, 0x4 // 0x4 for 4 bytes of num ( int type )?
 
-	| mov rsi, num
-	| add rsi, state:rdi->num
-	| mov rax, state:rdi->num1
-	| add rax, rsi
+	| mov rax, num
+	| add rax, state:rdi->num
+	| add rax, state:rdi->num1
 
-	// | leave
+	| push rax
+
+	| mov rsi, state:rdi->put
+	| mov rdi, rax
+	| call rsi
+
+	| pop rax
+
 	| ret
 
 	// assert(dasm_checkstep(Dst, 0) == 0);
@@ -84,16 +90,16 @@ static void* exec(int num) {
 	// return (void(*)(exec_state_t*))labels[lbl_start];
 }
 
-// static void put(int num) {
-// 	fprintf(stdout, "%d\n", num);
-// }
+static void put(int num) {
+	fprintf(stdout, "%d\n", num);
+}
 
 int main() {
 	exec_state_t state;
 
 	// state.str = "hello world\n";
-	// state.put = put;
 
+	state.put = put;
 	state.num = 7;
 	state.num1 = 8;
 	int (*fptr)(exec_state_t*) = exec(state.num);
@@ -109,4 +115,5 @@ int main() {
 // [X] 3. passing a pointer to a number and adding that with initial number
 // [X] 4. passing a function pointer and calling it to print new number
 // [X] 5. passing a number in a struct and adding that with initial number
-// [ ] 6. passing a state struct with char and printing that with a passed function pointer
+// [X] 6. passing a state struct with char and printing that with a passed function pointer
+// [ ] 7. specify and use arch specific regs, making code portable
