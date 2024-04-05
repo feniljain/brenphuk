@@ -6,6 +6,11 @@
 */
 
 #line 1 "dynasm_test.c"
+// || (defined(_WIN32) != WIN) // windows? who supports that :P
+
+// ||#if ((defined(_M_X64) || defined(__amd64__)) != X64)
+// #error "wrong arch passed"
+
 #include <stdio.h>
 #include <assert.h>
 #include <sys/mman.h>
@@ -19,7 +24,6 @@
 
 typedef struct exec_state
 {
-  // const char* str;
   void (*put)(const char*);
   int num;
   int num1;
@@ -51,18 +55,24 @@ static void* link_and_encode(dasm_State** d) {
 }
 
 static void* exec(int num) {
-	//|.arch x64
+	//| .arch x64
 #if DASM_VERSION != 10400
 #error "Version mismatch between DynASM and included encoding engine"
 #endif
-#line 47 "dynasm_test.c"
+#line 51 "dynasm_test.c"
+	//| .define arg1Reg, rdi
+	//| .define arg2Reg, rsi
+	//| .define aux1Reg, r10
+	//| .define aux2Reg, r11
+	//| .define returnReg, rax
+
 	//|.actionlist actions
-static const unsigned char actions[30] = {
-  72,199,192,237,72,3,135,233,72,3,135,233,255,80,255,72,139,183,233,72,137,
-  199,252,255,214,255,88,255,195,255
+static const unsigned char actions[31] = {
+  73,199,194,237,76,3,151,233,76,3,151,233,255,65,82,255,72,139,183,233,76,
+  137,215,252,255,214,255,88,255,195,255
 };
 
-#line 48 "dynasm_test.c"
+#line 58 "dynasm_test.c"
 
 	dasm_State* d;
 	dasm_State** Dst = &d;
@@ -71,53 +81,36 @@ static const unsigned char actions[30] = {
 
 	dasm_setup(&d, actions);
 
-	// |.define aState, r12
-	//|.type state, exec_state_t, rdi
+	//| .type state, exec_state_t, arg1Reg
 #define Dt1(_V) (int)(ptrdiff_t)&(((exec_state_t *)0)_V)
-#line 58 "dynasm_test.c"
+#line 67 "dynasm_test.c"
 
-	// assert(dasm_checkstep(Dst, 0) == 0);
-	// |->start:
-	// assert(dasm_checkstep(Dst, 0) == 0);
-
-	// | mov rdi, state->str
-	// | mov rdi, aState
-	// | call aword state->put
-	// assert(dasm_checkstep(Dst, 0) == 0);
-
-	// | push rbp
-	// | mov rbp, rsp
-	// | sub rsp, 0x4 // 0x4 for 4 bytes of num ( int type )?
-
-	//| mov rax, num
-	//| add rax, state:rdi->num
-	//| add rax, state:rdi->num1
+	//| mov aux1Reg, num
+	//| add aux1Reg, state:arg1Reg->num
+	//| add aux1Reg, state:arg1Reg->num1
 	dasm_put(Dst, 0, num, Dt1(->num), Dt1(->num1));
-#line 75 "dynasm_test.c"
+#line 71 "dynasm_test.c"
 
-	//| push rax
+	//| push aux1Reg
 	dasm_put(Dst, 13);
+#line 73 "dynasm_test.c"
+
+	//| mov arg2Reg, state:arg1Reg->put
+	//| mov arg1Reg, aux1Reg
+	//| call arg2Reg
+	dasm_put(Dst, 16, Dt1(->put));
 #line 77 "dynasm_test.c"
 
-	//| mov rsi, state:rdi->put
-	//| mov rdi, rax
-	//| call rsi
-	dasm_put(Dst, 15, Dt1(->put));
-#line 81 "dynasm_test.c"
-
-	//| pop rax
-	dasm_put(Dst, 26);
-#line 83 "dynasm_test.c"
+	//| pop returnReg
+	dasm_put(Dst, 27);
+#line 79 "dynasm_test.c"
 
 	//| ret
-	dasm_put(Dst, 28);
-#line 85 "dynasm_test.c"
-
-	// assert(dasm_checkstep(Dst, 0) == 0);
+	dasm_put(Dst, 29);
+#line 81 "dynasm_test.c"
 
 	int (*fptr)(exec_state_t*) = link_and_encode(&d);
 	return fptr;
-	// return (void(*)(exec_state_t*))labels[lbl_start];
 }
 
 static void put(int num) {
@@ -127,15 +120,18 @@ static void put(int num) {
 int main() {
 	exec_state_t state;
 
-	// state.str = "hello world\n";
-
 	state.put = put;
 	state.num = 7;
 	state.num1 = 8;
-	int (*fptr)(exec_state_t*) = exec(state.num);
+
+	int num;
+	printf("input num: \n", &num);
+	scanf("%d", &num);
+
+	int (*fptr)(exec_state_t*) = exec(num);
 	int ret = fptr(&state);
 
-	assert(ret == state.num + state.num + state.num1);
+	assert(ret == num + state.num + state.num1);
 
 	return 0;
 }
@@ -145,5 +141,6 @@ int main() {
 // [X] 3. passing a pointer to a number and adding that with initial number
 // [X] 4. passing a function pointer and calling it to print new number
 // [X] 5. passing a number in a struct and adding that with initial number
-// [ ] 6. passing a state struct with char and printing that with a passed function pointer
-// [ ] 7. specify and use arch specific regs, making code portable
+// [X] 6. passing a state struct with char and printing that with a passed function pointer
+// [X] 7. use .define for regs
+// [ ] 8. construct a dynamic jump point and jump to it

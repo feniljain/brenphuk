@@ -1,3 +1,8 @@
+// || (defined(_WIN32) != WIN) // windows? who supports that :P
+
+// ||#if ((defined(_M_X64) || defined(__amd64__)) != X64)
+// #error "wrong arch passed"
+
 #include <stdio.h>
 #include <assert.h>
 #include <sys/mman.h>
@@ -7,11 +12,11 @@
 
 #include "debug.h"
 
-#define DASM_CHECKS 1 // debugging mode for dynasm
+// debugging mode for dynasm
+#define DASM_CHECKS 1 
 
 typedef struct exec_state
 {
-  // const char* str;
   void (*put)(const char*);
   int num;
   int num1;
@@ -43,7 +48,13 @@ static void* link_and_encode(dasm_State** d) {
 }
 
 static void* exec(int num) {
-	|.arch x64
+	| .arch x64
+	| .define arg1Reg, rdi
+	| .define arg2Reg, rsi
+	| .define aux1Reg, r10
+	| .define aux2Reg, r11
+	| .define returnReg, rax
+
 	|.actionlist actions
 
 	dasm_State* d;
@@ -53,41 +64,24 @@ static void* exec(int num) {
 
 	dasm_setup(&d, actions);
 
-	// |.define aState, r12
-	|.type state, exec_state_t, rdi
+	| .type state, exec_state_t, arg1Reg
 
-	// assert(dasm_checkstep(Dst, 0) == 0);
-	// |->start:
-	// assert(dasm_checkstep(Dst, 0) == 0);
+	| mov aux1Reg, num
+	| add aux1Reg, state:arg1Reg->num
+	| add aux1Reg, state:arg1Reg->num1
 
-	// | mov rdi, state->str
-	// | mov rdi, aState
-	// | call aword state->put
-	// assert(dasm_checkstep(Dst, 0) == 0);
+	| push aux1Reg
 
-	// | push rbp
-	// | mov rbp, rsp
-	// | sub rsp, 0x4 // 0x4 for 4 bytes of num ( int type )?
+	| mov arg2Reg, state:arg1Reg->put
+	| mov arg1Reg, aux1Reg
+	| call arg2Reg
 
-	| mov rax, num
-	| add rax, state:rdi->num
-	| add rax, state:rdi->num1
-
-	| push rax
-
-	| mov rsi, state:rdi->put
-	| mov rdi, rax
-	| call rsi
-
-	| pop rax
+	| pop returnReg
 
 	| ret
 
-	// assert(dasm_checkstep(Dst, 0) == 0);
-
 	int (*fptr)(exec_state_t*) = link_and_encode(&d);
 	return fptr;
-	// return (void(*)(exec_state_t*))labels[lbl_start];
 }
 
 static void put(int num) {
@@ -97,15 +91,18 @@ static void put(int num) {
 int main() {
 	exec_state_t state;
 
-	// state.str = "hello world\n";
-
 	state.put = put;
 	state.num = 7;
 	state.num1 = 8;
-	int (*fptr)(exec_state_t*) = exec(state.num);
+
+	int num;
+	printf("input num: \n", &num);
+	scanf("%d", &num);
+
+	int (*fptr)(exec_state_t*) = exec(num);
 	int ret = fptr(&state);
 
-	assert(ret == state.num + state.num + state.num1);
+	assert(ret == num + state.num + state.num1);
 
 	return 0;
 }
@@ -116,4 +113,5 @@ int main() {
 // [X] 4. passing a function pointer and calling it to print new number
 // [X] 5. passing a number in a struct and adding that with initial number
 // [X] 6. passing a state struct with char and printing that with a passed function pointer
-// [ ] 7. specify and use arch specific regs, making code portable
+// [X] 7. use .define for regs
+// [ ] 8. construct a dynamic jump point and jump to it
