@@ -48,7 +48,8 @@ static void* link_and_encode(dasm_State** d) {
 }
 
 static void* exec(int num) {
-	// int n_lbls = 1;
+	int n_lbls = 1;
+	int nxt_lbl = 1;
 
 	| .arch x64
 	| .define arg1Reg, rdi
@@ -77,12 +78,10 @@ static void* exec(int num) {
 	if(num >= 7) {
 		| add aux1Reg, state:arg1Reg->num
 	} else {
-		// n_lbls += 1;
-		// dasm_growpc(&d,	n_lbls);
-		|1:
+		|=>nxt_lbl:
 		| add aux1Reg, state:arg1Reg->num1
 		| cmp aux1Reg, 10
-		| je <1
+		| je =>nxt_lbl
 	}
 
 	| push aux1Reg
@@ -97,10 +96,7 @@ static void* exec(int num) {
 
 	int (*fptr)(exec_state_t*) = link_and_encode(&d);
 
-	// printf("before_call's offset: %d\n", dasm_getpclabel(&d, lbl_before_call));
-	// return fptr;
 	return (int (*)(exec_state_t*))globals[lbl_start];
-	// return (int (*)(exec_state_t*))dasm_getpclabel(&d, lbl_start);
 }
 
 static void put(int num) {
@@ -143,5 +139,5 @@ int main() {
 // [X] 7. use .define for regs
 // [X] 8. add static labels support
 // [X] 9. add local labels support
-// [ ] 10. add dynamic labels support
-// [ ] 11. construct a dynamic jump point (dynamic here means addr changes with different jit configs) and jump to it
+// [X] 10. add dynamic labels support
+// [X] 11. construct a dynamic jump point (dynamic here means addr changes with different jit configs) and jump to it

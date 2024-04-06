@@ -56,13 +56,14 @@ static void* link_and_encode(dasm_State** d) {
 }
 
 static void* exec(int num) {
-	// int n_lbls = 1;
+	int n_lbls = 1;
+	int nxt_lbl = 1;
 
 	//| .arch x64
 #if DASM_VERSION != 10400
 #error "Version mismatch between DynASM and included encoding engine"
 #endif
-#line 54 "dynasm_test.c"
+#line 55 "dynasm_test.c"
 	//| .define arg1Reg, rdi
 	//| .define arg2Reg, rsi
 	//| .define aux1Reg, r10
@@ -79,61 +80,62 @@ enum {
   lbl_start,
   lbl__MAX
 };
-#line 66 "dynasm_test.c"
+#line 67 "dynasm_test.c"
 	void* globals[lbl__MAX];
 	dasm_setupglobal(&d, globals, lbl__MAX);
 
 	//| .actionlist actions
-static const unsigned char actions[46] = {
-  248,10,73,199,194,237,255,76,3,151,233,255,248,1,76,3,151,233,73,131,252,
-  250,10,15,132,244,1,255,65,82,255,72,139,183,233,76,137,215,252,255,214,255,
-  88,255,195,255
+static const unsigned char actions[44] = {
+  248,10,73,199,194,237,255,76,3,151,233,255,249,76,3,151,233,73,131,252,250,
+  10,15,132,245,255,65,82,255,72,139,183,233,76,137,215,252,255,214,255,88,
+  255,195,255
 };
 
-#line 70 "dynasm_test.c"
+#line 71 "dynasm_test.c"
 	dasm_setup(&d, actions);
 
 	//| .type state, exec_state_t, arg1Reg
 #define Dt1(_V) (int)(ptrdiff_t)&(((exec_state_t *)0)_V)
-#line 73 "dynasm_test.c"
+#line 74 "dynasm_test.c"
 
 	//| ->start:
 	//| mov aux1Reg, num
 	dasm_put(Dst, 0, num);
-#line 76 "dynasm_test.c"
+#line 77 "dynasm_test.c"
 
 	if(num >= 7) {
 		//| add aux1Reg, state:arg1Reg->num
 		dasm_put(Dst, 7, Dt1(->num));
-#line 79 "dynasm_test.c"
+#line 80 "dynasm_test.c"
 	} else {
 		// n_lbls += 1;
 		// dasm_growpc(&d,	n_lbls);
-		//|1:
+		// |1:
+		//|=>nxt_lbl:
 		//| add aux1Reg, state:arg1Reg->num1
 		//| cmp aux1Reg, 10
-		//| je <1
-		dasm_put(Dst, 12, Dt1(->num1));
-#line 86 "dynasm_test.c"
+		//| je =>nxt_lbl
+		dasm_put(Dst, 12, nxt_lbl, Dt1(->num1), nxt_lbl);
+#line 88 "dynasm_test.c"
 	}
 
 	//| push aux1Reg
-	dasm_put(Dst, 28);
-#line 89 "dynasm_test.c"
+	dasm_put(Dst, 26);
+#line 91 "dynasm_test.c"
 
 	//| mov arg2Reg, state:arg1Reg->put
 	//| mov arg1Reg, aux1Reg
 	//| call arg2Reg
-	dasm_put(Dst, 31, Dt1(->put));
-#line 93 "dynasm_test.c"
-
-	//| pop returnReg
-	dasm_put(Dst, 42);
+	dasm_put(Dst, 29, Dt1(->put));
 #line 95 "dynasm_test.c"
 
-	//| ret
-	dasm_put(Dst, 44);
+	//| pop returnReg
+	dasm_put(Dst, 40);
 #line 97 "dynasm_test.c"
+
+	//| ret
+	dasm_put(Dst, 42);
+#line 99 "dynasm_test.c"
 
 	int (*fptr)(exec_state_t*) = link_and_encode(&d);
 
