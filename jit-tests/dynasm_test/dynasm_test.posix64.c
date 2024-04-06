@@ -67,58 +67,74 @@ static void* exec(int num) {
 	//| .define aux2Reg, r11
 	//| .define returnReg, rax
 
-	//| .actionlist actions
-static const unsigned char actions[28] = {
-  73,199,194,237,255,76,3,151,233,255,65,82,255,72,139,183,233,76,137,215,252,
-  255,214,255,88,255,195,255
-};
-
-#line 59 "dynasm_test.c"
-
 	dasm_State* d;
 	dasm_State** Dst = &d;
 
 	dasm_init(Dst, 1);
 
+	//| .globals lbl_
+enum {
+  lbl_start,
+  lbl_before_call,
+  lbl__MAX
+};
+#line 64 "dynasm_test.c"
+	void* globals[lbl__MAX];
+	dasm_setupglobal(&d, globals, lbl__MAX);
+
+	//| .actionlist actions
+static const unsigned char actions[32] = {
+  248,10,73,199,194,237,255,76,3,151,233,255,65,82,255,72,139,183,233,76,137,
+  215,248,11,252,255,214,255,88,255,195,255
+};
+
+#line 68 "dynasm_test.c"
 	dasm_setup(&d, actions);
 
 	//| .type state, exec_state_t, arg1Reg
 #define Dt1(_V) (int)(ptrdiff_t)&(((exec_state_t *)0)_V)
-#line 68 "dynasm_test.c"
+#line 71 "dynasm_test.c"
 
+	//| ->start:
 	//| mov aux1Reg, num
 	dasm_put(Dst, 0, num);
-#line 70 "dynasm_test.c"
+#line 74 "dynasm_test.c"
+
 	if(num >= 7) {
 		//| add aux1Reg, state:arg1Reg->num
-		dasm_put(Dst, 5, Dt1(->num));
-#line 72 "dynasm_test.c"
+		dasm_put(Dst, 7, Dt1(->num));
+#line 77 "dynasm_test.c"
 	} else {
 		//| add aux1Reg, state:arg1Reg->num1
-		dasm_put(Dst, 5, Dt1(->num1));
-#line 74 "dynasm_test.c"
+		dasm_put(Dst, 7, Dt1(->num1));
+#line 79 "dynasm_test.c"
 	}
 
 	//| push aux1Reg
-	dasm_put(Dst, 10);
-#line 77 "dynasm_test.c"
+	dasm_put(Dst, 12);
+#line 82 "dynasm_test.c"
 
 	//| mov arg2Reg, state:arg1Reg->put
 	//| mov arg1Reg, aux1Reg
+	//| ->before_call:
 	//| call arg2Reg
-	dasm_put(Dst, 13, Dt1(->put));
-#line 81 "dynasm_test.c"
+	dasm_put(Dst, 15, Dt1(->put));
+#line 87 "dynasm_test.c"
 
 	//| pop returnReg
-	dasm_put(Dst, 24);
-#line 83 "dynasm_test.c"
+	dasm_put(Dst, 28);
+#line 89 "dynasm_test.c"
 
 	//| ret
-	dasm_put(Dst, 26);
-#line 85 "dynasm_test.c"
+	dasm_put(Dst, 30);
+#line 91 "dynasm_test.c"
 
 	int (*fptr)(exec_state_t*) = link_and_encode(&d);
-	return fptr;
+
+	// printf("before_call's offset: %d\n", dasm_getpclabel(&d, lbl_before_call));
+	//return fptr;
+	return (int (*)(exec_state_t*))globals[lbl_start];
+	// return (int (*)(exec_state_t*))dasm_getpclabel(&d, lbl_start);
 }
 
 static void put(int num) {
@@ -155,4 +171,6 @@ int main() {
 // [X] 5. passing a number in a struct and adding that with initial number
 // [X] 6. passing a state struct with char and printing that with a passed function pointer
 // [X] 7. use .define for regs
-// [ ] 8. construct a dynamic jump point (dynamic here means addr changes with different jit configs) and jump to it
+// [X] 8. add static labels support
+// [ ] 9. add dynamic labels support
+// [ ] 10. construct a dynamic jump point (dynamic here means addr changes with different jit configs) and jump to it

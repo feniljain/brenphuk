@@ -55,17 +55,21 @@ static void* exec(int num) {
 	| .define aux2Reg, r11
 	| .define returnReg, rax
 
-	| .actionlist actions
-
 	dasm_State* d;
 	dasm_State** Dst = &d;
 
 	dasm_init(Dst, 1);
 
+	| .globals lbl_
+	void* globals[lbl__MAX];
+	dasm_setupglobal(&d, globals, lbl__MAX);
+
+	| .actionlist actions
 	dasm_setup(&d, actions);
 
 	| .type state, exec_state_t, arg1Reg
 
+	| ->start:
 	| mov aux1Reg, num
 
 	if(num >= 7) {
@@ -78,6 +82,7 @@ static void* exec(int num) {
 
 	| mov arg2Reg, state:arg1Reg->put
 	| mov arg1Reg, aux1Reg
+	| ->before_call:
 	| call arg2Reg
 
 	| pop returnReg
@@ -85,7 +90,11 @@ static void* exec(int num) {
 	| ret
 
 	int (*fptr)(exec_state_t*) = link_and_encode(&d);
-	return fptr;
+
+	// printf("before_call's offset: %d\n", dasm_getpclabel(&d, lbl_before_call));
+	//return fptr;
+	return (int (*)(exec_state_t*))globals[lbl_start];
+	// return (int (*)(exec_state_t*))dasm_getpclabel(&d, lbl_start);
 }
 
 static void put(int num) {
@@ -122,4 +131,6 @@ int main() {
 // [X] 5. passing a number in a struct and adding that with initial number
 // [X] 6. passing a state struct with char and printing that with a passed function pointer
 // [X] 7. use .define for regs
-// [ ] 8. construct a dynamic jump point (dynamic here means addr changes with different jit configs) and jump to it
+// [X] 8. add static labels support
+// [ ] 9. add dynamic labels support
+// [ ] 10. construct a dynamic jump point (dynamic here means addr changes with different jit configs) and jump to it
