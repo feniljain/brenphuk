@@ -56,11 +56,13 @@ static void* link_and_encode(dasm_State** d) {
 }
 
 static void* exec(int num) {
+	// int n_lbls = 1;
+
 	//| .arch x64
 #if DASM_VERSION != 10400
 #error "Version mismatch between DynASM and included encoding engine"
 #endif
-#line 52 "dynasm_test.c"
+#line 54 "dynasm_test.c"
 	//| .define arg1Reg, rdi
 	//| .define arg2Reg, rsi
 	//| .define aux1Reg, r10
@@ -75,64 +77,68 @@ static void* exec(int num) {
 	//| .globals lbl_
 enum {
   lbl_start,
-  lbl_before_call,
   lbl__MAX
 };
-#line 64 "dynasm_test.c"
+#line 66 "dynasm_test.c"
 	void* globals[lbl__MAX];
 	dasm_setupglobal(&d, globals, lbl__MAX);
 
 	//| .actionlist actions
-static const unsigned char actions[32] = {
-  248,10,73,199,194,237,255,76,3,151,233,255,65,82,255,72,139,183,233,76,137,
-  215,248,11,252,255,214,255,88,255,195,255
+static const unsigned char actions[46] = {
+  248,10,73,199,194,237,255,76,3,151,233,255,248,1,76,3,151,233,73,131,252,
+  250,10,15,132,244,1,255,65,82,255,72,139,183,233,76,137,215,252,255,214,255,
+  88,255,195,255
 };
 
-#line 68 "dynasm_test.c"
+#line 70 "dynasm_test.c"
 	dasm_setup(&d, actions);
 
 	//| .type state, exec_state_t, arg1Reg
 #define Dt1(_V) (int)(ptrdiff_t)&(((exec_state_t *)0)_V)
-#line 71 "dynasm_test.c"
+#line 73 "dynasm_test.c"
 
 	//| ->start:
 	//| mov aux1Reg, num
 	dasm_put(Dst, 0, num);
-#line 74 "dynasm_test.c"
+#line 76 "dynasm_test.c"
 
 	if(num >= 7) {
 		//| add aux1Reg, state:arg1Reg->num
 		dasm_put(Dst, 7, Dt1(->num));
-#line 77 "dynasm_test.c"
-	} else {
-		//| add aux1Reg, state:arg1Reg->num1
-		dasm_put(Dst, 7, Dt1(->num1));
 #line 79 "dynasm_test.c"
+	} else {
+		// n_lbls += 1;
+		// dasm_growpc(&d,	n_lbls);
+		//|1:
+		//| add aux1Reg, state:arg1Reg->num1
+		//| cmp aux1Reg, 10
+		//| je <1
+		dasm_put(Dst, 12, Dt1(->num1));
+#line 86 "dynasm_test.c"
 	}
 
 	//| push aux1Reg
-	dasm_put(Dst, 12);
-#line 82 "dynasm_test.c"
-
-	//| mov arg2Reg, state:arg1Reg->put
-	//| mov arg1Reg, aux1Reg
-	//| ->before_call:
-	//| call arg2Reg
-	dasm_put(Dst, 15, Dt1(->put));
-#line 87 "dynasm_test.c"
-
-	//| pop returnReg
 	dasm_put(Dst, 28);
 #line 89 "dynasm_test.c"
 
+	//| mov arg2Reg, state:arg1Reg->put
+	//| mov arg1Reg, aux1Reg
+	//| call arg2Reg
+	dasm_put(Dst, 31, Dt1(->put));
+#line 93 "dynasm_test.c"
+
+	//| pop returnReg
+	dasm_put(Dst, 42);
+#line 95 "dynasm_test.c"
+
 	//| ret
-	dasm_put(Dst, 30);
-#line 91 "dynasm_test.c"
+	dasm_put(Dst, 44);
+#line 97 "dynasm_test.c"
 
 	int (*fptr)(exec_state_t*) = link_and_encode(&d);
 
 	// printf("before_call's offset: %d\n", dasm_getpclabel(&d, lbl_before_call));
-	//return fptr;
+	// return fptr;
 	return (int (*)(exec_state_t*))globals[lbl_start];
 	// return (int (*)(exec_state_t*))dasm_getpclabel(&d, lbl_start);
 }
@@ -158,7 +164,11 @@ int main() {
 	if(num >= 7) {
 		assert(ret == num + state.num);
 	} else {
-		assert(ret == num + state.num1);
+		if((num + state.num1) == 10) {
+			assert(ret ==  num + (state.num1 * 2));
+		} else {
+			assert(ret == num + state.num1);
+		}
 	}
 
 	return 0;
@@ -172,5 +182,6 @@ int main() {
 // [X] 6. passing a state struct with char and printing that with a passed function pointer
 // [X] 7. use .define for regs
 // [X] 8. add static labels support
-// [ ] 9. add dynamic labels support
-// [ ] 10. construct a dynamic jump point (dynamic here means addr changes with different jit configs) and jump to it
+// [X] 9. add local labels support
+// [ ] 10. add dynamic labels support
+// [ ] 11. construct a dynamic jump point (dynamic here means addr changes with different jit configs) and jump to it
