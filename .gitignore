@@ -4,3 +4,4 @@ eli/
 **/dynasm-doc/
 **/*.o
 **/a.out
+minilua
