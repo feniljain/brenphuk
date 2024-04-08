@@ -21,7 +21,7 @@ configure_file(
 run_target('format',
   command : ['clang-format-13','-i','-style=file', ['src/*.c', 'src/*.h']])
 
-run_command('clang-format-13','-i','-style=file', ['src/*.c', 'src/*.h'])
+# run_command('clang-format-13','-i','-style=file', ['src/*.c', 'src/*.h'])
 
 run_command('minilua', './dynasm-doc/luajit-2.0/dynasm/dynasm.lua','-o', 'src/interpreter.posix64.c', '-D', 'X64', 'src/interpreter.c', check: true)
 

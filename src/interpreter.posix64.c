@@ -29,7 +29,7 @@
 // =================== Types ===================
 
 int pointer;
-char tape[TAPE_SIZE];
+			char tape[TAPE_SIZE];
 
 // OPTIMIZATION: Can also convert both of these arrs into one, by
 // storing offset of other bracket, which will be the
@@ -296,49 +296,54 @@ void jit_gen_machine_code(int start_idx, int end_idx) {
 }
 
 func jit_loop(int start_idx, int end_idx) {
-  //| .arch x64
+  //|.arch x64 
 #if DASM_VERSION != 10400
 #error "Version mismatch between DynASM and included encoding engine"
 #endif
-#line 289 "src/interpreter.c"
-  //| .define arg1Reg, rdi
-  //| .define arg2Reg, rsi
-  //| .define aux1Reg, r10
-  //| .define aux2Reg, r11
-  //| .define returnReg, rax
+#line 292 "src/interpreter.c"
+	//|.define arg1Reg, rdi 
+	//|.define arg2Reg, rsi 
+	//|.define aux1Reg, r10 
+	//|.define aux2Reg, r11 
+	//|.define returnReg, rax
 
   dasm_State *d;
   dasm_State **Dst = &d;
 
   dasm_init(Dst, 1);
 
-  //| .globals lbl_
-  enum { lbl_start, lbl__MAX };
-#line 301 "src/interpreter.c"
-  void *globals[lbl__MAX];
+  //|.globals lbl_ 
+enum {
+  lbl_start,
+  lbl__MAX
+};
+#line 304 "src/interpreter.c"
+	void *globals[lbl__MAX];
   dasm_setupglobal(&d, globals, lbl__MAX);
 
-  //| .actionlist actions
-  static const unsigned char actions[12] = {248, 10,  73,  199, 194, 237,
-                                            73,  199, 195, 237, 195, 255};
+  //|.actionlist actions 
+static const unsigned char actions[12] = {
+  248,10,73,199,194,237,73,199,195,237,195,255
+};
 
-#line 305 "src/interpreter.c"
-  dasm_setup(&d, actions);
+#line 308 "src/interpreter.c"
+	dasm_setup(&d, actions);
 
   // | .type state, exec_state_t, arg1Reg
 
-  //| ->start:
-  //| mov aux1Reg, start_idx
-  //| mov aux2Reg, end_idx
-  //| ret
-  dasm_put(Dst, 0, start_idx, end_idx);
-#line 313 "src/interpreter.c"
+  //| ->start: 
+	//| mov aux1Reg, start_idx 
+	//| mov aux2Reg, end_idx 
+	//| ret
+	dasm_put(Dst, 0, start_idx, end_idx);
+#line 316 "src/interpreter.c"
 
   // jit_gen_machine_code(start_idx, end_idx);
 
   link_and_encode(&d);
 
   return (func)(globals[lbl_start]);
+
   // return (*(void **) (&func))(globals[lbl_start]);
 
   // first arg: %rdi: tape[pointer]

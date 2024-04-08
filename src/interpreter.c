@@ -21,7 +21,7 @@
 // =================== Types ===================
 
 int pointer;
-char tape[TAPE_SIZE];
+			char tape[TAPE_SIZE];
 
 // OPTIMIZATION: Can also convert both of these arrs into one, by
 // storing offset of other bracket, which will be the
@@ -288,30 +288,38 @@ void jit_gen_machine_code(int start_idx, int end_idx) {
 }
 
 func jit_loop(int start_idx, int end_idx) {
-  |.arch x64 |.define arg1Reg, rdi |.define arg2Reg, rsi |.define aux1Reg,
-      r10 |.define aux2Reg, r11 |.define returnReg,
-      rax
+	|.arch x64
+	|.define arg1Reg, rdi
+	|.define arg2Reg, rsi
+	|.define aux1Reg, r10
+	|.define aux2Reg, r11
+	|.define returnReg, rax
 
-          dasm_State *d;
+  dasm_State *d;
   dasm_State **Dst = &d;
 
   dasm_init(Dst, 1);
 
-  |.globals lbl_ void *globals[lbl__MAX];
+  |.globals lbl_
+	void *globals[lbl__MAX];
   dasm_setupglobal(&d, globals, lbl__MAX);
 
-  |.actionlist actions dasm_setup(&d, actions);
+  |.actionlist actions
+	dasm_setup(&d, actions);
 
   // | .type state, exec_state_t, arg1Reg
 
-  |->start : | mov aux1Reg, start_idx | mov aux2Reg,
-      end_idx | ret
+  | ->start: 
+	| mov aux1Reg, start_idx
+	| mov aux2Reg, end_idx
+	| ret
 
-                    // jit_gen_machine_code(start_idx, end_idx);
+  // jit_gen_machine_code(start_idx, end_idx);
 
-                    link_and_encode(&d);
+  link_and_encode(&d);
 
   return (func)(globals[lbl_start]);
+
   // return (*(void **) (&func))(globals[lbl_start]);
 
   // first arg: %rdi: tape[pointer]
