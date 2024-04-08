@@ -2,11 +2,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "benchmark.h"
+#include "debug.h"
 #include "interpreter.h"
 #include "repl.h"
 #include "tests.h"
-#include "benchmark.h"
-#include "debug.h"
 
 int main(int argc, char *argv[]);
 
@@ -22,11 +22,11 @@ int main(int argc, char *argv[]) {
   } else if (!strcmp(argv[1], "tests")) {
     tests();
   } else if (!strcmp(argv[1], "benchmark")) {
-		int itrs = 10;
+    int itrs = 10;
 
-		if(argc == 3) {
+    if (argc == 3) {
       itrs = atoi(argv[2]);
-		}
+    }
 
     benchmark(itrs);
   }

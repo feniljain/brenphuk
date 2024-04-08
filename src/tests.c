@@ -1,7 +1,7 @@
 #include <assert.h>
 
-#include "interpreter.h"
 #include "debug.h"
+#include "interpreter.h"
 
 void simple_inc_test(void) {
   exec("+++", 3);
@@ -27,7 +27,6 @@ void nested_open_bracket_test(void) {
 
   reset();
   DBG_PRINT("tests::test 3 done");
-
 }
 
 void close_bracket_test(void) {
@@ -74,13 +73,13 @@ void test_hello_world(void) {
 }
 
 int tests(void) {
-	simple_inc_test();
-	open_bracket_loop_test();
-	nested_open_bracket_test();
-	close_bracket_test();
-	test_mandlebrot_start();
-	test_part_hello_world();
-	test_hello_world();
+  simple_inc_test();
+  open_bracket_loop_test();
+  nested_open_bracket_test();
+  close_bracket_test();
+  test_mandlebrot_start();
+  test_part_hello_world();
+  test_hello_world();
 
   return 0;
 }

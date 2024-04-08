@@ -19,11 +19,11 @@ configure_file(
 
 # TODO: search for clang-format path and use them here, making it work across machines
 run_target('format',
-  command : ['clang-format-13','-i','-style=file', ['../interpreter.c']])
+  command : ['clang-format-13','-i','-style=file', ['src/*.c', 'src/*.h']])
 
-run_command('clang-format-13','-i','-style=file', 'interpreter.c')
+run_command('clang-format-13','-i','-style=file', ['src/*.c', 'src/*.h'])
 
-run_command('./minilua', './dynasm-doc/luajit-2.0/dynasm/dynasm.lua','-o', 'src/interpreter.posix64.c', '-D', 'X64', 'src/interpreter.c', check: true)
+run_command('minilua', './dynasm-doc/luajit-2.0/dynasm/dynasm.lua','-o', 'src/interpreter.posix64.c', '-D', 'X64', 'src/interpreter.c', check: true)
 
 executable('brenphuk',
 						'src/main.c',

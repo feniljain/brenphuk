@@ -15,3 +15,5 @@ git submodule update --init
 gcc -o minilua luajit-2.0/src/host/minilua.c -lm
 
 cp minilua ../
+cp luajit-2.0/dynasm/dasm_proto.h ../include/
+cp luajit-2.0/dynasm/dasm_x86.h ../include/

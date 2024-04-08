@@ -8,11 +8,11 @@
 
 #define TAPE_SIZE 30000
 
-// NOTE: Initializations like int ops_len = 0; would throw duplicate sybmol error cause
-// this var then gets included in every file which imports this header,
-// instead if we just declare the variable here and we initialize it in some file,
-// then only that file will contain this symbol,
-// this happens even tho we have header guard in place
+// NOTE: Initializations like int ops_len = 0; would throw duplicate sybmol
+// error cause this var then gets included in every file which imports this
+// header, instead if we just declare the variable here and we initialize it in
+// some file, then only that file will contain this symbol, this happens even
+// tho we have header guard in place
 
 // =================== Functions ===================
 

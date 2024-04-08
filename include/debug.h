@@ -1,8 +1,8 @@
 #ifndef DBG_H
 
 #define DBG_H
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #define DBG_LOGS // comment this to disable debug comments
 
@@ -25,6 +25,9 @@
   fprintf(stderr, "%s\n", l);                                                  \
   abort();
 
-#define UNUSED(expr) do { (void)(expr); } while (0)
+#define UNUSED(expr)                                                           \
+  do {                                                                         \
+    (void)(expr);                                                              \
+  } while (0)
 
 #endif

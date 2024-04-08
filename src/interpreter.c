@@ -1,13 +1,13 @@
 #include <assert.h>
+#include <errno.h>
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/mman.h>
 #include <time.h>
 #include <unistd.h>
-#include <sys/mman.h>
-#include <errno.h>
 
 #include "debug.h"
 #include "interpreter.h"
@@ -57,7 +57,7 @@ int op_assoc[9][9];
 uint8_t machine_code[TAPE_SIZE];
 size_t codes_len = 0;
 
-typedef int(*func)();
+typedef int (*func)();
 
 // =================== Getters ===================
 
@@ -114,11 +114,11 @@ void print_op_assoc(void) {
 }
 
 void print_loop_track(void) {
-	for(int i = 0; i < TAPE_SIZE; i++) {
-		if(loop_track[i] > 0) {
-			DBG_PRINTF("loop_track[%d]: %d", i, loop_track[i]);
-		}
-	}
+  for (int i = 0; i < TAPE_SIZE; i++) {
+    if (loop_track[i] > 0) {
+      DBG_PRINTF("loop_track[%d]: %d", i, loop_track[i]);
+    }
+  }
 }
 
 void fill_brackets_loc(void) {
@@ -227,102 +227,98 @@ void parse(char *prog, int prog_len) {
   }
 }
 
-static void link_and_encode(dasm_State** d) {
-	size_t size;
+static void link_and_encode(dasm_State **d) {
+  size_t size;
 
-	int result = dasm_link(d, &size);
-	assert(result == DASM_S_OK);
+  int result = dasm_link(d, &size);
+  assert(result == DASM_S_OK);
 
-	// NOTE: if you don't have any asm declared, this will fail with "invalid argument"
-	char* buf = mmap(0, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-	assert(buf != MAP_FAILED);
+  // NOTE: if you don't have any asm declared, this will fail with "invalid
+  // argument"
+  char *buf =
+      mmap(0, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+  assert(buf != MAP_FAILED);
 
-	dasm_encode(d, buf);
-	dasm_free(d);
+  dasm_encode(d, buf);
+  dasm_free(d);
 
-	result = mprotect(buf, size, PROT_EXEC | PROT_READ);
-	assert(result == 0);
+  result = mprotect(buf, size, PROT_EXEC | PROT_READ);
+  assert(result == 0);
 
-	FILE *fp = fopen("/tmp/jit-output", "w+");
-	if(!fp) {
-		ABORT("file not found");
-	}
-	fwrite(buf, size, 1, fp);
-	fclose(fp);
+  FILE *fp = fopen("/tmp/jit-output", "w+");
+  if (!fp) {
+    ABORT("file not found");
+  }
+  fwrite(buf, size, 1, fp);
+  fclose(fp);
 
-	// return buf;
+  // return buf;
 }
 
 // uint8_t* jit_gen_machine_code(int start_idx, int end_idx) {
 void jit_gen_machine_code(int start_idx, int end_idx) {
-	for(int i = start_idx; i <= end_idx; i++) {
-		switch (ops[i].op_type) {
-			case FWD:
-				break;
-    	case BWD:
-    	  break;
-    	case INCREMENT:
-    	  break;
-    	case DECREMENT:
-    	  break;
-    	case OUTPUT:
-    	  break;
-    	case INPUT: {
-    	  break;
-    	}
-    	case JMP_IF_ZERO: {
-    	  break;
-			}
-    	case JMP_IF_NOT_ZERO: {
-    	  break;
-    	}
-    	case INVALID:
-    	  ABORT("INVALID shouln't have leaked till here, there's a bug in parsing code");
-    	default:
-    	  break;
-			}
-	}
+  for (int i = start_idx; i <= end_idx; i++) {
+    switch (ops[i].op_type) {
+    case FWD:
+      break;
+    case BWD:
+      break;
+    case INCREMENT:
+      break;
+    case DECREMENT:
+      break;
+    case OUTPUT:
+      break;
+    case INPUT: {
+      break;
+    }
+    case JMP_IF_ZERO: {
+      break;
+    }
+    case JMP_IF_NOT_ZERO: {
+      break;
+    }
+    case INVALID:
+      ABORT("INVALID shouln't have leaked till here, there's a bug in parsing "
+            "code");
+    default:
+      break;
+    }
+  }
 }
 
 func jit_loop(int start_idx, int end_idx) {
-	| .arch x64
-	| .define arg1Reg, rdi
-	| .define arg2Reg, rsi
-	| .define aux1Reg, r10
-	| .define aux2Reg, r11
-	| .define returnReg, rax
+  |.arch x64 |.define arg1Reg, rdi |.define arg2Reg, rsi |.define aux1Reg,
+      r10 |.define aux2Reg, r11 |.define returnReg,
+      rax
 
-	dasm_State* d;
-	dasm_State** Dst = &d;
+          dasm_State *d;
+  dasm_State **Dst = &d;
 
-	dasm_init(Dst, 1);
+  dasm_init(Dst, 1);
 
-	| .globals lbl_
-	void* globals[lbl__MAX];
-	dasm_setupglobal(&d, globals, lbl__MAX);
+  |.globals lbl_ void *globals[lbl__MAX];
+  dasm_setupglobal(&d, globals, lbl__MAX);
 
-	| .actionlist actions
-	dasm_setup(&d, actions);
+  |.actionlist actions dasm_setup(&d, actions);
 
-	// | .type state, exec_state_t, arg1Reg
+  // | .type state, exec_state_t, arg1Reg
 
-	| ->start:
-	| mov aux1Reg, start_idx
-	| mov aux2Reg, end_idx
-	| ret
+  |->start : | mov aux1Reg, start_idx | mov aux2Reg,
+      end_idx | ret
 
-	// jit_gen_machine_code(start_idx, end_idx);
+                    // jit_gen_machine_code(start_idx, end_idx);
 
-	link_and_encode(&d);
+                    link_and_encode(&d);
 
-	return (func)(globals[lbl_start]);
-	// return (*(void **) (&func))(globals[lbl_start]);
+  return (func)(globals[lbl_start]);
+  // return (*(void **) (&func))(globals[lbl_start]);
 
-	// first arg: %rdi: tape[pointer]
-	// second arg: %rsi: repeat
-	// third arg: %rdx:
-	// fourth arg: %rcx:
-	// jit_map_and_exec();
+  // first arg: %rdi: tape[pointer]
+  // second arg: %rsi: repeat
+  // third arg: %rdx:
+  // fourth arg: %rcx:
+  // jit_map_and_exec();
 }
 
 // TODO(feniljain): shift all operations to functions and try flamegraph
@@ -371,19 +367,19 @@ int exec(char *prog, int prog_len) {
         }
 
         i = idx;
-				break;
+        break;
       }
 
-			loop_track[i]++;
-			if(loop_track[i] == 1) {
-				// jit it
-				func fptr = jit_loop(i, 131);
-				fptr();
-				// continue;
-			}
+      loop_track[i]++;
+      if (loop_track[i] == 1) {
+        // jit it
+        func fptr = jit_loop(i, 131);
+        fptr();
+        // continue;
+      }
 
       break;
-		}
+    }
     case JMP_IF_NOT_ZERO: {
       if (tape[pointer] != 0) {
         int idx = open_brackets_loc[i];
@@ -397,7 +393,8 @@ int exec(char *prog, int prog_len) {
       break;
     }
     case INVALID:
-      ABORT("INVALID shouln't have leakded till here, there's a bug in parsing code");
+      ABORT("INVALID shouln't have leakded till here, there's a bug in parsing "
+            "code");
     default:
       break;
     }

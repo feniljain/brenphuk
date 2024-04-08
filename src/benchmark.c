@@ -4,8 +4,8 @@
 #include <time.h>
 
 #include "benchmark.h"
-#include "interpreter.h"
 #include "debug.h"
+#include "interpreter.h"
 
 double benchmark_results[8][2]; // 7 commands, 1st column for count, 2nd for
                                 // exec avg time
@@ -36,9 +36,11 @@ ProgStr read_file(char *file_path) {
   assert(fptr != NULL);
 
   while ((linelen = getline(&buf, &linecap, fptr)) > 0) {
-    // - converting linelen is safe cause we have checked it's greater than zero already
-		// - as we know memory regions are not overlapping, it's safe to use memcpy instead of memmove
-    memcpy(prog + idx, buf, (size_t)linelen); 
+    // - converting linelen is safe cause we have checked it's greater than zero
+    // already
+    // - as we know memory regions are not overlapping, it's safe to use memcpy
+    // instead of memmove
+    memcpy(prog + idx, buf, (size_t)linelen);
     idx += (int)linelen;
   }
 
@@ -56,23 +58,24 @@ int benchmark(int iterations) {
   ProgStr prog_str = read_file("../programs/mandlebrot.b");
   DBG_PRINTF("prog: %s: %d", prog_str.prog, prog_str.len);
 
-	for(int i = 0; i < iterations; i++) {
-		#undef DBG_LOGS
+  for (int i = 0; i < iterations; i++) {
+#undef DBG_LOGS
 
-		start = clock();
+    start = clock();
 
-		exec(prog_str.prog, prog_str.len);
+    exec(prog_str.prog, prog_str.len);
 
-		end = clock();
-		cpu_time_used = ((double)(end - start)) / CLOCKS_PER_SEC;
-		avg_cpu_time_used += cpu_time_used;
-		DBG_PRINTF("benchmark::program took: %f secs in %d iteration", cpu_time_used, i + 1);
+    end = clock();
+    cpu_time_used = ((double)(end - start)) / CLOCKS_PER_SEC;
+    avg_cpu_time_used += cpu_time_used;
+    DBG_PRINTF("benchmark::program took: %f secs in %d iteration",
+               cpu_time_used, i + 1);
 
-		reset();
-	}
+    reset();
+  }
 
-	avg_cpu_time_used /= (double)iterations;
-	DBG_PRINTF("benchmark::on average program took: %f secs", avg_cpu_time_used);
+  avg_cpu_time_used /= (double)iterations;
+  DBG_PRINTF("benchmark::on average program took: %f secs", avg_cpu_time_used);
 
   reset();
 
