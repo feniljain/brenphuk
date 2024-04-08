@@ -1,3 +1,11 @@
+/*
+** This file has been pre-processed with DynASM.
+** http://luajit.org/dynasm.html
+** DynASM version 1.4.0, DynASM x64 version 1.4.0
+** DO NOT EDIT! The original file is in "src/interpreter.c".
+*/
+
+#line 1 "src/interpreter.c"
 #include <assert.h>
 #include <stdarg.h>
 #include <stdbool.h>
@@ -16,7 +24,7 @@
 #include "dasm_x86.h"
 
 // debugging mode for dynasm
-#define DASM_CHECKS 1
+#define DASM_CHECKS 1 
 
 // =================== Types ===================
 
@@ -258,7 +266,7 @@ void jit_gen_machine_code(int start_idx, int end_idx) {
 	for(int i = start_idx; i <= end_idx; i++) {
 		switch (ops[i].op_type) {
 			case FWD:
-				break;
+    	  break;
     	case BWD:
     	  break;
     	case INCREMENT:
@@ -281,35 +289,51 @@ void jit_gen_machine_code(int start_idx, int end_idx) {
     	default:
     	  break;
 			}
-	}
+	} 
 }
 
 func jit_loop(int start_idx, int end_idx) {
-	| .arch x64
-	| .define arg1Reg, rdi
-	| .define arg2Reg, rsi
-	| .define aux1Reg, r10
-	| .define aux2Reg, r11
-	| .define returnReg, rax
+	//| .arch x64
+#if DASM_VERSION != 10400
+#error "Version mismatch between DynASM and included encoding engine"
+#endif
+#line 289 "src/interpreter.c"
+	//| .define arg1Reg, rdi
+	//| .define arg2Reg, rsi
+	//| .define aux1Reg, r10
+	//| .define aux2Reg, r11
+	//| .define returnReg, rax
 
 	dasm_State* d;
 	dasm_State** Dst = &d;
 
 	dasm_init(Dst, 1);
 
-	| .globals lbl_
+	//| .globals lbl_
+enum {
+  lbl_start,
+  lbl__MAX
+};
+#line 301 "src/interpreter.c"
 	void* globals[lbl__MAX];
 	dasm_setupglobal(&d, globals, lbl__MAX);
 
-	| .actionlist actions
+	//| .actionlist actions
+static const unsigned char actions[12] = {
+  248,10,73,199,194,237,73,199,195,237,195,255
+};
+
+#line 305 "src/interpreter.c"
 	dasm_setup(&d, actions);
 
 	// | .type state, exec_state_t, arg1Reg
-
-	| ->start:
-	| mov aux1Reg, start_idx
-	| mov aux2Reg, end_idx
-	| ret
+	
+	//| ->start:
+	//| mov aux1Reg, start_idx
+	//| mov aux2Reg, end_idx
+	//| ret
+	dasm_put(Dst, 0, start_idx, end_idx);
+#line 313 "src/interpreter.c"
 
 	// jit_gen_machine_code(start_idx, end_idx);
 

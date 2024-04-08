@@ -21,7 +21,7 @@
 #include "debug.h"
 
 // debugging mode for dynasm
-#define DASM_CHECKS 1 
+#define DASM_CHECKS 1
 
 typedef struct exec_state
 {
@@ -108,41 +108,35 @@ static const unsigned char actions[44] = {
 		dasm_put(Dst, 7, Dt1(->num));
 #line 80 "dynasm_test.c"
 	} else {
-		// n_lbls += 1;
-		// dasm_growpc(&d,	n_lbls);
-		// |1:
 		//|=>nxt_lbl:
 		//| add aux1Reg, state:arg1Reg->num1
 		//| cmp aux1Reg, 10
 		//| je =>nxt_lbl
 		dasm_put(Dst, 12, nxt_lbl, Dt1(->num1), nxt_lbl);
-#line 88 "dynasm_test.c"
+#line 85 "dynasm_test.c"
 	}
 
 	//| push aux1Reg
 	dasm_put(Dst, 26);
-#line 91 "dynasm_test.c"
+#line 88 "dynasm_test.c"
 
 	//| mov arg2Reg, state:arg1Reg->put
 	//| mov arg1Reg, aux1Reg
 	//| call arg2Reg
 	dasm_put(Dst, 29, Dt1(->put));
-#line 95 "dynasm_test.c"
+#line 92 "dynasm_test.c"
 
 	//| pop returnReg
 	dasm_put(Dst, 40);
-#line 97 "dynasm_test.c"
+#line 94 "dynasm_test.c"
 
 	//| ret
 	dasm_put(Dst, 42);
-#line 99 "dynasm_test.c"
+#line 96 "dynasm_test.c"
 
 	int (*fptr)(exec_state_t*) = link_and_encode(&d);
 
-	// printf("before_call's offset: %d\n", dasm_getpclabel(&d, lbl_before_call));
-	// return fptr;
 	return (int (*)(exec_state_t*))globals[lbl_start];
-	// return (int (*)(exec_state_t*))dasm_getpclabel(&d, lbl_start);
 }
 
 static void put(int num) {
@@ -185,5 +179,5 @@ int main() {
 // [X] 7. use .define for regs
 // [X] 8. add static labels support
 // [X] 9. add local labels support
-// [ ] 10. add dynamic labels support
-// [ ] 11. construct a dynamic jump point (dynamic here means addr changes with different jit configs) and jump to it
+// [X] 10. add dynamic labels support
+// [X] 11. construct a dynamic jump point (dynamic here means addr changes with different jit configs) and jump to it

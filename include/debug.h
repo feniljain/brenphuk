@@ -1,4 +1,5 @@
 #ifndef DBG_H
+
 #define DBG_H
 #include <stdlib.h>
 #include <stdio.h>
@@ -23,5 +24,7 @@
 #define ABORT(l)                                                               \
   fprintf(stderr, "%s\n", l);                                                  \
   abort();
+
+#define UNUSED(expr) do { (void)(expr); } while (0)
 
 #endif

@@ -2,7 +2,7 @@ project('dynasm_test', 'c',
   version : '0.1',
   default_options : ['warning_level=3', 'default_library=static'])
 
-inc = include_directories('../../dynasm-doc', '../../')
+inc = include_directories('../../dynasm-doc', '../../include')
 
 # source: https://github.com/tiernemi/meson-sample-project/blob/master/meson.build
 # This adds the clang format file to the build directory

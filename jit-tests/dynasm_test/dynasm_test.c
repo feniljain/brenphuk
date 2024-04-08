@@ -13,7 +13,7 @@
 #include "debug.h"
 
 // debugging mode for dynasm
-#define DASM_CHECKS 1 
+#define DASM_CHECKS 1
 
 typedef struct exec_state
 {
