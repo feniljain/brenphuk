@@ -296,47 +296,51 @@ void jit_gen_machine_code(int start_idx, int end_idx) {
 }
 
 func jit_loop(int start_idx, int end_idx) {
-  //|.arch x64 
+	// clang-format off
+	//|.arch x64
 #if DASM_VERSION != 10400
 #error "Version mismatch between DynASM and included encoding engine"
 #endif
-#line 292 "src/interpreter.c"
-	//|.define arg1Reg, rdi 
-	//|.define arg2Reg, rsi 
-	//|.define aux1Reg, r10 
-	//|.define aux2Reg, r11 
+#line 293 "src/interpreter.c"
+	//|.define arg1Reg, rdi
+	//|.define arg2Reg, rsi
+	//|.define aux1Reg, r10
+	//|.define aux2Reg, r11
 	//|.define returnReg, rax
+	// clang-format on
 
   dasm_State *d;
   dasm_State **Dst = &d;
 
   dasm_init(Dst, 1);
 
-  //|.globals lbl_ 
+  //|.globals lbl_
 enum {
   lbl_start,
   lbl__MAX
 };
-#line 304 "src/interpreter.c"
+#line 306 "src/interpreter.c"
 	void *globals[lbl__MAX];
   dasm_setupglobal(&d, globals, lbl__MAX);
 
-  //|.actionlist actions 
+	// clang-format off
+  //|.actionlist actions
 static const unsigned char actions[12] = {
   248,10,73,199,194,237,73,199,195,237,195,255
 };
 
-#line 308 "src/interpreter.c"
+#line 311 "src/interpreter.c"
 	dasm_setup(&d, actions);
 
   // | .type state, exec_state_t, arg1Reg
 
   //| ->start: 
-	//| mov aux1Reg, start_idx 
-	//| mov aux2Reg, end_idx 
+	//| mov aux1Reg, start_idx
+	//| mov aux2Reg, end_idx
 	//| ret
 	dasm_put(Dst, 0, start_idx, end_idx);
-#line 316 "src/interpreter.c"
+#line 319 "src/interpreter.c"
+	// clang-format on
 
   // jit_gen_machine_code(start_idx, end_idx);
 

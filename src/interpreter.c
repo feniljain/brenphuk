@@ -288,12 +288,14 @@ void jit_gen_machine_code(int start_idx, int end_idx) {
 }
 
 func jit_loop(int start_idx, int end_idx) {
+	// clang-format off
 	|.arch x64
 	|.define arg1Reg, rdi
 	|.define arg2Reg, rsi
 	|.define aux1Reg, r10
 	|.define aux2Reg, r11
 	|.define returnReg, rax
+	// clang-format on
 
   dasm_State *d;
   dasm_State **Dst = &d;
@@ -304,6 +306,7 @@ func jit_loop(int start_idx, int end_idx) {
 	void *globals[lbl__MAX];
   dasm_setupglobal(&d, globals, lbl__MAX);
 
+	// clang-format off
   |.actionlist actions
 	dasm_setup(&d, actions);
 
@@ -313,6 +316,7 @@ func jit_loop(int start_idx, int end_idx) {
 	| mov aux1Reg, start_idx
 	| mov aux2Reg, end_idx
 	| ret
+	// clang-format on
 
   // jit_gen_machine_code(start_idx, end_idx);
 
