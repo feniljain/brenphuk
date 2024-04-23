@@ -11,13 +11,39 @@ void simple_inc_test(void) {
   DBG_PRINT("tests::simple_inc done");
 }
 
-void open_bracket_loop_test(void) {
+void simple_dec_test(void) {
+  exec("+++--", 5);
+  assert(get_ele_at_idx(0) == 1);
+
+  reset();
+  DBG_PRINT("tests::simple_dec done");
+}
+
+void simple_ops_test(void) {
+  exec("+++>++<--", 9);
+  assert(get_ele_at_idx(0) == 1);
+  assert(get_ele_at_idx(1) == 2);
+
+  reset();
+  DBG_PRINT("tests::simple_ops done");
+}
+
+void zero_itr_test(void) {
   // opening bracket for loop test
   exec("[++]", 4);
   assert(get_ele_at_idx(0) == 0);
 
   reset();
-  DBG_PRINT("tests::test 2 done");
+  DBG_PRINT("tests::zero_itr_test done");
+}
+
+void n_itr_test(void) {
+  // opening bracket for loop test
+  exec("+++[-]+", 7);
+  assert(get_ele_at_idx(0) == 1);
+
+  reset();
+  DBG_PRINT("tests::zero_itr_test done");
 }
 
 void nested_open_bracket_test(void) {
@@ -74,7 +100,10 @@ void test_hello_world(void) {
 
 int tests(void) {
   simple_inc_test();
-  open_bracket_loop_test();
+  simple_dec_test();
+  simple_ops_test();
+  zero_itr_test();
+  n_itr_test();
   nested_open_bracket_test();
   close_bracket_test();
   test_mandlebrot_start();

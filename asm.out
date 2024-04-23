@@ -1,0 +1,12 @@
+00000000  803F00            cmp byte [rdi],0x0
+00000003  741A              jz 0x1f
+00000005  4883C708          add rdi,byte +0x8
+00000009  803F00            cmp byte [rdi],0x0
+0000000C  7408              jz 0x16
+0000000E  802F01            sub byte [rdi],0x1
+00000011  803F00            cmp byte [rdi],0x0
+00000014  75F8              jnz 0xe
+00000016  4883C701          add rdi,byte +0x1
+0000001A  803F00            cmp byte [rdi],0x0
+0000001D  75E6              jnz 0x5
+0000001F  C3                ret

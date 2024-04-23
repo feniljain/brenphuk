@@ -18,10 +18,21 @@
 // debugging mode for dynasm
 #define DASM_CHECKS 1
 
-// =================== Types ===================
+// clang-format off
 
-int pointer;
-			char tape[TAPE_SIZE];
+|	.arch x64
+|	.define arg1Reg, rdi
+|	.define arg2Reg, rsi
+|	.define aux1Reg, r10
+|	.define aux2Reg, r11
+|	.define returnReg, rax
+
+    // clang-format on
+
+    // =================== Types ===================
+
+    int pointer;
+char tape[TAPE_SIZE];
 
 // OPTIMIZATION: Can also convert both of these arrs into one, by
 // storing offset of other bracket, which will be the
@@ -57,7 +68,7 @@ int op_assoc[9][9];
 uint8_t machine_code[TAPE_SIZE];
 size_t codes_len = 0;
 
-typedef int (*func)();
+typedef int (*func)(char *);
 
 // =================== Getters ===================
 
@@ -245,6 +256,8 @@ static void link_and_encode(dasm_State **d) {
   result = mprotect(buf, size, PROT_EXEC | PROT_READ);
   assert(result == 0);
 
+  DBG_PRINT("writing jit generated asm to file");
+
   FILE *fp = fopen("/tmp/jit-output", "w+");
   if (!fp) {
     ABORT("file not found");
@@ -255,82 +268,121 @@ static void link_and_encode(dasm_State **d) {
   // return buf;
 }
 
-// uint8_t* jit_gen_machine_code(int start_idx, int end_idx) {
-void jit_gen_machine_code(int start_idx, int end_idx) {
-  for (int i = start_idx; i <= end_idx; i++) {
-    switch (ops[i].op_type) {
-    case FWD:
-      break;
-    case BWD:
-      break;
-    case INCREMENT:
-      break;
-    case DECREMENT:
-      break;
-    case OUTPUT:
-      break;
-    case INPUT: {
-      break;
-    }
-    case JMP_IF_ZERO: {
-      break;
-    }
-    case JMP_IF_NOT_ZERO: {
-      break;
-    }
-    case INVALID:
-      ABORT("INVALID shouln't have leaked till here, there's a bug in parsing "
-            "code");
-    default:
-      break;
-    }
-  }
-}
-
 func jit_loop(int start_idx, int end_idx) {
-	// clang-format off
-	|.arch x64
-	|.define arg1Reg, rdi
-	|.define arg2Reg, rsi
-	|.define aux1Reg, r10
-	|.define aux2Reg, r11
-	|.define returnReg, rax
-	// clang-format on
+  int loop_lbl = 1, lbl_capacity = 108, loop_depth = 0, loop_lbls[TAPE_SIZE][2];
 
   dasm_State *d;
   dasm_State **Dst = &d;
 
   dasm_init(Dst, 1);
 
+  // clang-format off
+
   |.globals lbl_
 	void *globals[lbl__MAX];
   dasm_setupglobal(&d, globals, lbl__MAX);
 
-	// clang-format off
-  |.actionlist actions
+	| .actionlist actions
 	dasm_setup(&d, actions);
+	dasm_growpc(&d, lbl_capacity);
 
-  // | .type state, exec_state_t, arg1Reg
+  | ->start:
 
-  | ->start: 
-	| mov aux1Reg, start_idx
-	| mov aux2Reg, end_idx
-	| ret
-	// clang-format on
+      // clang-format on
 
-  // jit_gen_machine_code(start_idx, end_idx);
+      for (int i = start_idx; i <= end_idx; i++) {
+    switch (ops[i].op_type) {
+    case INVALID: {
+      ABORT("INVALID shouln't have leaked till here, there's a bug in parsing "
+            "code");
+    }
+    case FWD: {
+      // clang-format off
+			| add arg1Reg, ops[i].repeat
+                     // clang-format on
+                     break;
+    }
+    case BWD: {
+      // clang-format off
+			| sub arg1Reg, ops[i].repeat
+                     // clang-format on
+                     break;
+    }
+    case INCREMENT: {
+      // clang-format off
+			| add byte [arg1Reg], ops[i].repeat
+                           // clang-format on
+                           break;
+    }
+    case DECREMENT: {
+      // clang-format off
+			| sub byte [arg1Reg], ops[i].repeat
+                           // clang-format on
+                           break;
+    }
+    case OUTPUT: {
+      break;
+    }
+    case INPUT: {
+      break;
+    }
+    case JMP_IF_ZERO: {
+      if ((loop_lbl + 2) >= lbl_capacity) {
+        lbl_capacity *= 2;
+        dasm_growpc(&d, lbl_capacity);
+      }
 
-  link_and_encode(&d);
+      loop_lbls[loop_depth][0] = loop_lbl;
+      loop_lbl++;
+
+      loop_lbls[loop_depth][1] = loop_lbl;
+      loop_lbl++;
+
+      // DBG_PRINTF("JMP_IF_ZERO::loop_depth: %d, loop_lbl[0]: %d, loop_lbl[1]:
+      // %d", loop_depth, loop_lbls[loop_depth][0], loop_lbls[loop_depth][1]);
+
+      // clang-format off
+			| cmp byte [arg1Reg], 0
+			| jz =>loop_lbls[loop_depth][1]
+
+			|=>loop_lbls[loop_depth][0]:
+          // clang-format on
+
+          loop_depth++;
+
+      break;
+    }
+    case JMP_IF_NOT_ZERO: {
+      loop_depth--;
+
+      // clang-format off
+			| cmp byte [arg1Reg], 0
+			| jnz =>loop_lbls[loop_depth][0]
+
+			|=>loop_lbls[loop_depth][1]:
+          // clang-format on
+
+          // DBG_PRINTF("JMP_IF_NOT_ZERO::loop_depth: %d, loop_lbl[0]: %d,
+          // loop_lbl[1]: %d", loop_depth, loop_lbls[loop_depth][0],
+          // loop_lbls[loop_depth][1]);
+
+          break;
+    }
+    default: {
+      break;
+    }
+    }
+  }
+
+  // clang-format off
+  | ret
+          // clang-format on
+
+          link_and_encode(&d);
 
   return (func)(globals[lbl_start]);
 
   // return (*(void **) (&func))(globals[lbl_start]);
-
-  // first arg: %rdi: tape[pointer]
-  // second arg: %rsi: repeat
-  // third arg: %rdx:
-  // fourth arg: %rcx:
-  // jit_map_and_exec();
 }
 
 // TODO(feniljain): shift all operations to functions and try flamegraph
@@ -342,6 +394,8 @@ int exec(char *prog, int prog_len) {
   parse(prog, prog_len);
   // print_op_assoc(); // This is for checking which all ops occur together
   fill_brackets_loc();
+
+  func fptr = NULL;
 
   while (i <= ops_len) {
     // start = clock();
@@ -371,8 +425,9 @@ int exec(char *prog, int prog_len) {
       break;
     }
     case JMP_IF_ZERO: {
+      int idx = close_brackets_loc[i];
+
       if (tape[pointer] == 0) {
-        int idx = close_brackets_loc[i];
         if (idx == -1) {
           DBG_PRINTF("[: got bracket_loc as -1 for i: %d", i);
           ABORT("invalid state");
@@ -380,14 +435,15 @@ int exec(char *prog, int prog_len) {
 
         i = idx;
         break;
-      }
-
-      loop_track[i]++;
-      if (loop_track[i] == 1) {
-        // jit it
-        func fptr = jit_loop(i, 131);
-        fptr();
-        // continue;
+      } else {
+        loop_track[i]++;
+        if (loop_track[i] == 1) {
+          fptr = jit_loop(i, idx);
+          fptr(&tape[pointer]);
+          fptr = NULL;
+          i = idx;
+          break;
+        }
       }
 
       break;
@@ -419,7 +475,7 @@ int exec(char *prog, int prog_len) {
     // benchmark_results[b_idx][1] += cpu_time_used;
   }
 
-  print_loop_track();
+  // print_loop_track();
 
   // print_benchmark_results();
   return 0;
@@ -434,4 +490,5 @@ void reset(void) {
   memset(op_assoc, 0, sizeof op_assoc);
   memset(close_brackets_loc, -1, sizeof close_brackets_loc);
   memset(open_brackets_loc, -1, sizeof open_brackets_loc);
+  memset(loop_track, 0, sizeof loop_track);
 }
