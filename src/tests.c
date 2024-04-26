@@ -46,6 +46,12 @@ void n_itr_test(void) {
   DBG_PRINT("tests::zero_itr_test done");
 }
 
+void print_inside_loop(void) {
+  exec("+++[.-]", 7);
+  reset();
+  DBG_PRINT("tests::test 8 done");
+}
+
 void nested_open_bracket_test(void) {
   // nested opening bracket for loop test
   exec("[++[++]]", 8);
@@ -99,16 +105,17 @@ void test_hello_world(void) {
 }
 
 int tests(void) {
-  simple_inc_test();
-  simple_dec_test();
-  simple_ops_test();
-  zero_itr_test();
-  n_itr_test();
-  nested_open_bracket_test();
-  close_bracket_test();
-  test_mandlebrot_start();
-  test_part_hello_world();
-  test_hello_world();
+  // simple_inc_test();
+  // simple_dec_test();
+  // simple_ops_test();
+  // zero_itr_test();
+  // n_itr_test();
+  print_inside_loop();
+  // nested_open_bracket_test();
+  // close_bracket_test();
+  // test_mandlebrot_start();
+  // test_part_hello_world();
+  // test_hello_world();
 
   return 0;
 }

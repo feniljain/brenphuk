@@ -1,15 +1,16 @@
-#include<stdio.h>
+#include <stdio.h>
 
-// static void put(int num) {
-// 	fprintf(stderr, "%d\n", num);
-// }
-// 
+static void put(int* c) {
+	fprintf(stderr, "%c\n", *c);
+}
+
 // static void put_wrap(void (put)(int)) {
 // 	put(5);
 // }
 
 int main() {
 	// put_wrap(put);
-	fprintf(stderr, "%d\n", 7);
+	int a = 65;
+	put(&a);
 	return 0;
 }

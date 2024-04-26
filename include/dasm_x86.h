@@ -70,27 +70,27 @@ typedef const unsigned char *dasm_ActList;
 
 /* Per-section structure. */
 typedef struct dasm_Section {
-  int *rbuf; /* Biased buffer pointer (negative section bias). */
-  int *buf; /* True buffer pointer. */
+  int *rbuf;    /* Biased buffer pointer (negative section bias). */
+  int *buf;     /* True buffer pointer. */
   size_t bsize; /* Buffer size in bytes. */
-  int pos; /* Biased buffer position. */
-  int epos; /* End of biased buffer position - max single put. */
-  int ofs; /* Byte offset into section. */
+  int pos;      /* Biased buffer position. */
+  int epos;     /* End of biased buffer position - max single put. */
+  int ofs;      /* Byte offset into section. */
 } dasm_Section;
 
 /* Core structure holding the DynASM encoding state. */
 struct dasm_State {
-  size_t psize; /* Allocated size of this structure. */
+  size_t psize;            /* Allocated size of this structure. */
   dasm_ActList actionlist; /* Current actionlist pointer. */
-  int *lglabels; /* Local/global chain/pos ptrs. */
+  int *lglabels;           /* Local/global chain/pos ptrs. */
   size_t lgsize;
   int *pclabels; /* PC label chains/pos ptrs. */
   size_t pcsize;
-  void **globals; /* Array of globals (bias -10). */
-  dasm_Section *section; /* Pointer to active section. */
-  size_t codesize; /* Total size of all code sections. */
-  int maxsection; /* 0 <= sectionidx < maxsection. */
-  int status; /* Status code. */
+  void **globals;           /* Array of globals (bias -10). */
+  dasm_Section *section;    /* Pointer to active section. */
+  size_t codesize;          /* Total size of all code sections. */
+  int maxsection;           /* 0 <= sectionidx < maxsection. */
+  int status;               /* Status code. */
   dasm_Section sections[1]; /* All sections. Alloc-extended. */
 };
 
@@ -320,11 +320,11 @@ void dasm_put(Dst_DECL, int start, ...) {
           n = *pb;
           *pb = pos;
         }
-        *pl = -pos; /* Label exists now. */
+        *pl = -pos;     /* Label exists now. */
         b[pos++] = ofs; /* Store pass1 offset estimate. */
         break;
       case DASM_ALIGN:
-        ofs += *p++; /* Maximum alignment needed (arg is 2**n-1). */
+        ofs += *p++;    /* Maximum alignment needed (arg is 2**n-1). */
         b[pos++] = ofs; /* Store pass1 offset estimate. */
         break;
       case DASM_EXTERN:

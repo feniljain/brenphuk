@@ -19,15 +19,13 @@
 #define DASM_CHECKS 1
 
 // clang-format off
-
 |	.arch x64
 |	.define arg1Reg, rdi
 |	.define arg2Reg, rsi
 |	.define aux1Reg, r10
 |	.define aux2Reg, r11
 |	.define returnReg, rax
-
-    // clang-format on
+    /* clang-format on */
 
     // =================== Types ===================
 
@@ -205,7 +203,6 @@ void parse(char *prog, int prog_len) {
     default:
       break;
     }
-
     if (op_type == INVALID) {
       i++;
       continue; // this can happen when there are comments which are supposed to
@@ -268,6 +265,12 @@ static void link_and_encode(dasm_State **d) {
   // return buf;
 }
 
+static void put_ch(int *c) { fprintf(stderr, "%c\n", *c); }
+
+// static unsigned char get_ch() {
+// 	return (unsigned char)getchar();
+// }
+
 func jit_loop(int start_idx, int end_idx) {
   int loop_lbl = 1, lbl_capacity = 108, loop_depth = 0, loop_lbls[TAPE_SIZE][2];
 
@@ -321,7 +324,14 @@ func jit_loop(int start_idx, int end_idx) {
                            break;
     }
     case OUTPUT: {
-      break;
+      // clang-format off
+			// | sub rsp, 8
+			| push arg1Reg
+			| mov aux1Reg, put_ch
+			| call aux1Reg
+			| pop arg1Reg
+                                        // clang-format on
+                                        break;
     }
     case INPUT: {
       break;

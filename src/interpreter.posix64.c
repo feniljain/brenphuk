@@ -27,19 +27,17 @@
 #define DASM_CHECKS 1
 
 // clang-format off
-
 //|	.arch x64
 #if DASM_VERSION != 10400
 #error "Version mismatch between DynASM and included encoding engine"
 #endif
-#line 24 "src/interpreter.c"
+#line 23 "src/interpreter.c"
 //|	.define arg1Reg, rdi
 //|	.define arg2Reg, rsi
 //|	.define aux1Reg, r10
 //|	.define aux2Reg, r11
 //|	.define returnReg, rax
-
-// clang-format on
+/* clang-format on */
 
 // =================== Types ===================
 
@@ -217,7 +215,6 @@ void parse(char *prog, int prog_len) {
     default:
       break;
     }
-
     if (op_type == INVALID) {
       i++;
       continue; // this can happen when there are comments which are supposed to
@@ -280,6 +277,12 @@ static void link_and_encode(dasm_State **d) {
   // return buf;
 }
 
+static void put_ch(int *c) { fprintf(stderr, "%c\n", *c); }
+
+// static unsigned char get_ch() {
+// 	return (unsigned char)getchar();
+// }
+
 func jit_loop(int start_idx, int end_idx) {
   int loop_lbl = 1, lbl_capacity = 108, loop_depth = 0, loop_lbls[TAPE_SIZE][2];
 
@@ -295,23 +298,24 @@ enum {
   lbl_start,
   lbl__MAX
 };
-#line 282 "src/interpreter.c"
+#line 287 "src/interpreter.c"
 	void *globals[lbl__MAX];
   dasm_setupglobal(&d, globals, lbl__MAX);
 
 	//| .actionlist actions
-static const unsigned char actions[40] = {
+static const unsigned char actions[51] = {
   248,10,255,72,129,199,239,255,72,129,252,239,239,255,128,7,235,255,128,47,
-  235,255,128,63,0,15,132,245,255,249,255,128,63,0,15,133,245,255,195,255
+  235,255,87,73,199,194,237,65,252,255,210,95,255,128,63,0,15,132,245,255,249,
+  255,128,63,0,15,133,245,255,195,255
 };
 
-#line 286 "src/interpreter.c"
+#line 291 "src/interpreter.c"
 	dasm_setup(&d, actions);
 	dasm_growpc(&d, lbl_capacity);
 
   //| ->start:
   dasm_put(Dst, 0);
-#line 290 "src/interpreter.c"
+#line 295 "src/interpreter.c"
 
   // clang-format on
 
@@ -325,7 +329,7 @@ static const unsigned char actions[40] = {
       // clang-format off
 			//| add arg1Reg, ops[i].repeat
 			dasm_put(Dst, 3, ops[i].repeat);
-#line 302 "src/interpreter.c"
+#line 307 "src/interpreter.c"
       // clang-format on
       break;
     }
@@ -333,7 +337,7 @@ static const unsigned char actions[40] = {
       // clang-format off
 			//| sub arg1Reg, ops[i].repeat
 			dasm_put(Dst, 8, ops[i].repeat);
-#line 308 "src/interpreter.c"
+#line 313 "src/interpreter.c"
       // clang-format on
       break;
     }
@@ -341,7 +345,7 @@ static const unsigned char actions[40] = {
       // clang-format off
 			//| add byte [arg1Reg], ops[i].repeat
 			dasm_put(Dst, 14, ops[i].repeat);
-#line 314 "src/interpreter.c"
+#line 319 "src/interpreter.c"
       // clang-format on
       break;
     }
@@ -349,11 +353,20 @@ static const unsigned char actions[40] = {
       // clang-format off
 			//| sub byte [arg1Reg], ops[i].repeat
 			dasm_put(Dst, 18, ops[i].repeat);
-#line 320 "src/interpreter.c"
+#line 325 "src/interpreter.c"
       // clang-format on
       break;
     }
     case OUTPUT: {
+      // clang-format off
+			// | sub rsp, 8
+			//| push arg1Reg
+			//| mov aux1Reg, put_ch
+			//| call aux1Reg
+			//| pop arg1Reg
+			dasm_put(Dst, 22, put_ch);
+#line 335 "src/interpreter.c"
+      // clang-format on
       break;
     }
     case INPUT: {
@@ -377,12 +390,12 @@ static const unsigned char actions[40] = {
       // clang-format off
 			//| cmp byte [arg1Reg], 0
 			//| jz =>loop_lbls[loop_depth][1]
-			dasm_put(Dst, 22, loop_lbls[loop_depth][1]);
-#line 346 "src/interpreter.c"
+			dasm_put(Dst, 33, loop_lbls[loop_depth][1]);
+#line 359 "src/interpreter.c"
 
 			//|=>loop_lbls[loop_depth][0]:
-			dasm_put(Dst, 29, loop_lbls[loop_depth][0]);
-#line 348 "src/interpreter.c"
+			dasm_put(Dst, 40, loop_lbls[loop_depth][0]);
+#line 361 "src/interpreter.c"
       // clang-format on
 
       loop_depth++;
@@ -395,12 +408,12 @@ static const unsigned char actions[40] = {
       // clang-format off
 			//| cmp byte [arg1Reg], 0
 			//| jnz =>loop_lbls[loop_depth][0]
-			dasm_put(Dst, 31, loop_lbls[loop_depth][0]);
-#line 360 "src/interpreter.c"
+			dasm_put(Dst, 42, loop_lbls[loop_depth][0]);
+#line 373 "src/interpreter.c"
 
 			//|=>loop_lbls[loop_depth][1]:
-			dasm_put(Dst, 29, loop_lbls[loop_depth][1]);
-#line 362 "src/interpreter.c"
+			dasm_put(Dst, 40, loop_lbls[loop_depth][1]);
+#line 375 "src/interpreter.c"
       // clang-format on
 
       // DBG_PRINTF("JMP_IF_NOT_ZERO::loop_depth: %d, loop_lbl[0]: %d,
@@ -417,8 +430,8 @@ static const unsigned char actions[40] = {
 
   // clang-format off
   //| ret
-  dasm_put(Dst, 38);
-#line 376 "src/interpreter.c"
+  dasm_put(Dst, 49);
+#line 391 "src/interpreter.c"
   // clang-format on
 
   link_and_encode(&d);
