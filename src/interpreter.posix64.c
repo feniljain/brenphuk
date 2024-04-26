@@ -37,11 +37,11 @@
 //|	.define aux1Reg, r10
 //|	.define aux2Reg, r11
 //|	.define returnReg, rax
-/* clang-format on */
+    /* clang-format on */
 
-// =================== Types ===================
+    // =================== Types ===================
 
-int pointer;
+    int pointer;
 char tape[TAPE_SIZE];
 
 // OPTIMIZATION: Can also convert both of these arrs into one, by
@@ -78,7 +78,12 @@ int op_assoc[9][9];
 uint8_t machine_code[TAPE_SIZE];
 size_t codes_len = 0;
 
-typedef int (*func)(char *);
+typedef struct {
+	char* tape_pointer;
+	void(*put)(int *c);
+} exec_state_t;
+
+typedef int (*func)(exec_state_t*);
 
 // =================== Getters ===================
 
@@ -285,7 +290,7 @@ static void put_ch(int *c) { fprintf(stderr, "%c\n", *c); }
 
 func jit_loop(int start_idx, int end_idx) {
   int loop_lbl = 1, lbl_capacity = 108, loop_depth = 0, loop_lbls[TAPE_SIZE][2];
-
+	
   dasm_State *d;
   dasm_State **Dst = &d;
 
@@ -298,28 +303,32 @@ enum {
   lbl_start,
   lbl__MAX
 };
-#line 287 "src/interpreter.c"
+#line 290 "src/interpreter.c"
 	void *globals[lbl__MAX];
   dasm_setupglobal(&d, globals, lbl__MAX);
 
 	//| .actionlist actions
 static const unsigned char actions[51] = {
   248,10,255,72,129,199,239,255,72,129,252,239,239,255,128,7,235,255,128,47,
-  235,255,87,73,199,194,237,65,252,255,210,95,255,128,63,0,15,132,245,255,249,
-  255,128,63,0,15,133,245,255,195,255
+  235,255,87,73,199,194,237,252,255,151,233,95,255,128,63,0,15,132,245,255,
+  249,255,128,63,0,15,133,245,255,195,255
 };
 
-#line 291 "src/interpreter.c"
+#line 294 "src/interpreter.c"
 	dasm_setup(&d, actions);
 	dasm_growpc(&d, lbl_capacity);
 
+	//|.type state, exec_state_t, arg1Reg
+#define Dt1(_V) (int)(ptrdiff_t)&(((exec_state_t *)0)_V)
+#line 298 "src/interpreter.c"
+
   //| ->start:
   dasm_put(Dst, 0);
-#line 295 "src/interpreter.c"
+#line 300 "src/interpreter.c"
 
-  // clang-format on
+      // clang-format on
 
-  for (int i = start_idx; i <= end_idx; i++) {
+      for (int i = start_idx; i <= end_idx; i++) {
     switch (ops[i].op_type) {
     case INVALID: {
       ABORT("INVALID shouln't have leaked till here, there's a bug in parsing "
@@ -329,45 +338,45 @@ static const unsigned char actions[51] = {
       // clang-format off
 			//| add arg1Reg, ops[i].repeat
 			dasm_put(Dst, 3, ops[i].repeat);
-#line 307 "src/interpreter.c"
-      // clang-format on
-      break;
+#line 312 "src/interpreter.c"
+                     // clang-format on
+                     break;
     }
     case BWD: {
       // clang-format off
 			//| sub arg1Reg, ops[i].repeat
 			dasm_put(Dst, 8, ops[i].repeat);
-#line 313 "src/interpreter.c"
-      // clang-format on
-      break;
+#line 318 "src/interpreter.c"
+                     // clang-format on
+                     break;
     }
     case INCREMENT: {
       // clang-format off
 			//| add byte [arg1Reg], ops[i].repeat
 			dasm_put(Dst, 14, ops[i].repeat);
-#line 319 "src/interpreter.c"
-      // clang-format on
-      break;
+#line 324 "src/interpreter.c"
+                           // clang-format on
+                           break;
     }
     case DECREMENT: {
       // clang-format off
 			//| sub byte [arg1Reg], ops[i].repeat
 			dasm_put(Dst, 18, ops[i].repeat);
-#line 325 "src/interpreter.c"
-      // clang-format on
-      break;
+#line 330 "src/interpreter.c"
+                           // clang-format on
+                           break;
     }
     case OUTPUT: {
       // clang-format off
 			// | sub rsp, 8
 			//| push arg1Reg
 			//| mov aux1Reg, put_ch
-			//| call aux1Reg
+			//| call aword state:arg1Reg->put
 			//| pop arg1Reg
-			dasm_put(Dst, 22, put_ch);
-#line 335 "src/interpreter.c"
-      // clang-format on
-      break;
+			dasm_put(Dst, 22, put_ch, Dt1(->put));
+#line 340 "src/interpreter.c"
+                                        // clang-format on
+                                        break;
     }
     case INPUT: {
       break;
@@ -391,14 +400,14 @@ static const unsigned char actions[51] = {
 			//| cmp byte [arg1Reg], 0
 			//| jz =>loop_lbls[loop_depth][1]
 			dasm_put(Dst, 33, loop_lbls[loop_depth][1]);
-#line 359 "src/interpreter.c"
+#line 364 "src/interpreter.c"
 
 			//|=>loop_lbls[loop_depth][0]:
 			dasm_put(Dst, 40, loop_lbls[loop_depth][0]);
-#line 361 "src/interpreter.c"
-      // clang-format on
+#line 366 "src/interpreter.c"
+          // clang-format on
 
-      loop_depth++;
+          loop_depth++;
 
       break;
     }
@@ -409,18 +418,18 @@ static const unsigned char actions[51] = {
 			//| cmp byte [arg1Reg], 0
 			//| jnz =>loop_lbls[loop_depth][0]
 			dasm_put(Dst, 42, loop_lbls[loop_depth][0]);
-#line 373 "src/interpreter.c"
+#line 378 "src/interpreter.c"
 
 			//|=>loop_lbls[loop_depth][1]:
 			dasm_put(Dst, 40, loop_lbls[loop_depth][1]);
-#line 375 "src/interpreter.c"
-      // clang-format on
+#line 380 "src/interpreter.c"
+          // clang-format on
 
-      // DBG_PRINTF("JMP_IF_NOT_ZERO::loop_depth: %d, loop_lbl[0]: %d,
-      // loop_lbl[1]: %d", loop_depth, loop_lbls[loop_depth][0],
-      // loop_lbls[loop_depth][1]);
+          // DBG_PRINTF("JMP_IF_NOT_ZERO::loop_depth: %d, loop_lbl[0]: %d,
+          // loop_lbl[1]: %d", loop_depth, loop_lbls[loop_depth][0],
+          // loop_lbls[loop_depth][1]);
 
-      break;
+          break;
     }
     default: {
       break;
@@ -431,10 +440,10 @@ static const unsigned char actions[51] = {
   // clang-format off
   //| ret
   dasm_put(Dst, 49);
-#line 391 "src/interpreter.c"
-  // clang-format on
+#line 396 "src/interpreter.c"
+          // clang-format on
 
-  link_and_encode(&d);
+          link_and_encode(&d);
 
   return (func)(globals[lbl_start]);
 
@@ -495,7 +504,12 @@ int exec(char *prog, int prog_len) {
         loop_track[i]++;
         if (loop_track[i] == 1) {
           fptr = jit_loop(i, idx);
-          fptr(&tape[pointer]);
+
+					exec_state_t state;
+					state.tape_pointer = &tape[pointer];
+					state.put = put_ch;
+
+          fptr(&state);
           fptr = NULL;
           i = idx;
           break;

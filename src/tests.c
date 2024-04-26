@@ -105,12 +105,12 @@ void test_hello_world(void) {
 }
 
 int tests(void) {
-  // simple_inc_test();
-  // simple_dec_test();
-  // simple_ops_test();
-  // zero_itr_test();
-  // n_itr_test();
-  print_inside_loop();
+   // simple_inc_test();
+   // simple_dec_test();
+   // simple_ops_test();
+   // zero_itr_test();
+   n_itr_test();
+  // print_inside_loop();
   // nested_open_bracket_test();
   // close_bracket_test();
   // test_mandlebrot_start();

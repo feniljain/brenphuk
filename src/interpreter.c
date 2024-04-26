@@ -66,7 +66,12 @@ int op_assoc[9][9];
 uint8_t machine_code[TAPE_SIZE];
 size_t codes_len = 0;
 
-typedef int (*func)(char *);
+typedef struct {
+	char* tape_pointer;
+	void(*put)(int *c);
+} exec_state_t;
+
+typedef int (*func)(exec_state_t*);
 
 // =================== Getters ===================
 
@@ -273,7 +278,7 @@ static void put_ch(int *c) { fprintf(stderr, "%c\n", *c); }
 
 func jit_loop(int start_idx, int end_idx) {
   int loop_lbl = 1, lbl_capacity = 108, loop_depth = 0, loop_lbls[TAPE_SIZE][2];
-
+	
   dasm_State *d;
   dasm_State **Dst = &d;
 
@@ -288,6 +293,8 @@ func jit_loop(int start_idx, int end_idx) {
 	| .actionlist actions
 	dasm_setup(&d, actions);
 	dasm_growpc(&d, lbl_capacity);
+
+	|.type state, exec_state_t, arg1Reg
 
   | ->start:
 
@@ -327,8 +334,7 @@ func jit_loop(int start_idx, int end_idx) {
       // clang-format off
 			// | sub rsp, 8
 			| push arg1Reg
-			| mov aux1Reg, put_ch
-			| call aux1Reg
+			| call aword state:arg1Reg->put
 			| pop arg1Reg
                                         // clang-format on
                                         break;
@@ -449,8 +455,15 @@ int exec(char *prog, int prog_len) {
         loop_track[i]++;
         if (loop_track[i] == 1) {
           fptr = jit_loop(i, idx);
-          fptr(&tape[pointer]);
+
+					exec_state_t state;
+					state.tape_pointer = &tape[pointer];
+					state.put = put_ch;
+
+          fptr(&state);
+
           fptr = NULL;
+
           i = idx;
           break;
         }
