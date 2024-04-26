@@ -67,8 +67,8 @@ uint8_t machine_code[TAPE_SIZE];
 size_t codes_len = 0;
 
 typedef struct {
-	char* tape_pointer;
 	void(*put)(int *c);
+	char* tape_pointer;
 } exec_state_t;
 
 typedef int (*func)(exec_state_t*);
@@ -297,6 +297,7 @@ func jit_loop(int start_idx, int end_idx) {
 	|.type state, exec_state_t, arg1Reg
 
   | ->start:
+	| mov arg2Reg, state->tape_pointer
 
       // clang-format on
 
@@ -308,25 +309,25 @@ func jit_loop(int start_idx, int end_idx) {
     }
     case FWD: {
       // clang-format off
-			| add arg1Reg, ops[i].repeat
+			| add arg2Reg, ops[i].repeat
                      // clang-format on
                      break;
     }
     case BWD: {
       // clang-format off
-			| sub arg1Reg, ops[i].repeat
+			| sub arg2Reg, ops[i].repeat
                      // clang-format on
                      break;
     }
     case INCREMENT: {
       // clang-format off
-			| add byte [arg1Reg], ops[i].repeat
+			| add byte [arg2Reg], ops[i].repeat
                            // clang-format on
                            break;
     }
     case DECREMENT: {
       // clang-format off
-			| sub byte [arg1Reg], ops[i].repeat
+			| sub byte [arg2Reg], ops[i].repeat
                            // clang-format on
                            break;
     }
@@ -336,7 +337,9 @@ func jit_loop(int start_idx, int end_idx) {
 			| push arg1Reg
 			| call aword state:arg1Reg->put
 			| pop arg1Reg
-                                        // clang-format on
+			| mov arg2Reg, state->tape_pointer
+			// TODO: restore rsi here
+      // clang-format on
                                         break;
     }
     case INPUT: {
@@ -358,7 +361,7 @@ func jit_loop(int start_idx, int end_idx) {
       // %d", loop_depth, loop_lbls[loop_depth][0], loop_lbls[loop_depth][1]);
 
       // clang-format off
-			| cmp byte [arg1Reg], 0
+			| cmp byte [arg2Reg], 0
 			| jz =>loop_lbls[loop_depth][1]
 
 			|=>loop_lbls[loop_depth][0]:
@@ -372,7 +375,7 @@ func jit_loop(int start_idx, int end_idx) {
       loop_depth--;
 
       // clang-format off
-			| cmp byte [arg1Reg], 0
+			| cmp byte [arg2Reg], 0
 			| jnz =>loop_lbls[loop_depth][0]
 
 			|=>loop_lbls[loop_depth][1]:
