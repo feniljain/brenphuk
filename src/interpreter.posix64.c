@@ -79,11 +79,11 @@ uint8_t machine_code[TAPE_SIZE];
 size_t codes_len = 0;
 
 typedef struct {
-	void(*put)(int *c);
-	char* tape_pointer;
+  void (*put)(char c);
+  char *tape_pointer;
 } exec_state_t;
 
-typedef int (*func)(exec_state_t*);
+typedef int (*func)(exec_state_t *);
 
 // =================== Getters ===================
 
@@ -282,7 +282,7 @@ static void link_and_encode(dasm_State **d) {
   // return buf;
 }
 
-static void put_ch(int *c) { fprintf(stderr, "%c\n", *c); }
+static void put_ch(char c) { fprintf(stderr, "%c\n", c); }
 
 // static unsigned char get_ch() {
 // 	return (unsigned char)getchar();
@@ -290,7 +290,7 @@ static void put_ch(int *c) { fprintf(stderr, "%c\n", *c); }
 
 func jit_loop(int start_idx, int end_idx) {
   int loop_lbl = 1, lbl_capacity = 108, loop_depth = 0, loop_lbls[TAPE_SIZE][2];
-	
+
   dasm_State *d;
   dasm_State **Dst = &d;
 
@@ -308,10 +308,11 @@ enum {
   dasm_setupglobal(&d, globals, lbl__MAX);
 
 	//| .actionlist actions
-static const unsigned char actions[55] = {
+static const unsigned char actions[65] = {
   248,10,72,139,183,233,255,72,129,198,239,255,72,129,252,238,239,255,128,6,
-  235,255,128,46,235,255,87,252,255,151,233,95,72,139,183,233,255,128,62,0,
-  15,132,245,255,249,255,128,62,0,15,133,245,255,195,255
+  235,255,128,46,235,255,87,255,76,139,151,233,72,139,62,255,65,252,255,210,
+  255,95,72,139,183,233,255,128,62,0,15,132,245,255,249,255,128,62,0,15,133,
+  245,255,195,255
 };
 
 #line 294 "src/interpreter.c"
@@ -369,16 +370,26 @@ static const unsigned char actions[55] = {
     }
     case OUTPUT: {
       // clang-format off
-			// | sub rsp, 8
 			//| push arg1Reg
-			//| call aword state:arg1Reg->put
+			dasm_put(Dst, 26);
+#line 337 "src/interpreter.c"
+
+			//| mov aux1Reg, aword state:arg1Reg->put
+			//| mov arg1Reg, [arg2Reg]
+			dasm_put(Dst, 28, Dt1(->put));
+#line 340 "src/interpreter.c"
+			// | call aword state:arg1Reg->put
+			//| call aux1Reg
+			dasm_put(Dst, 36);
+#line 342 "src/interpreter.c"
+
 			//| pop arg1Reg
 			//| mov arg2Reg, state->tape_pointer
-			dasm_put(Dst, 26, Dt1(->put), Dt1(->tape_pointer));
-#line 341 "src/interpreter.c"
-			// TODO: restore rsi here
-      // clang-format on
-                                        break;
+			dasm_put(Dst, 41, Dt1(->tape_pointer));
+#line 345 "src/interpreter.c"
+          // clang-format on
+
+          break;
     }
     case INPUT: {
       break;
@@ -401,12 +412,12 @@ static const unsigned char actions[55] = {
       // clang-format off
 			//| cmp byte [arg2Reg], 0
 			//| jz =>loop_lbls[loop_depth][1]
-			dasm_put(Dst, 37, loop_lbls[loop_depth][1]);
-#line 366 "src/interpreter.c"
+			dasm_put(Dst, 47, loop_lbls[loop_depth][1]);
+#line 370 "src/interpreter.c"
 
 			//|=>loop_lbls[loop_depth][0]:
-			dasm_put(Dst, 44, loop_lbls[loop_depth][0]);
-#line 368 "src/interpreter.c"
+			dasm_put(Dst, 54, loop_lbls[loop_depth][0]);
+#line 372 "src/interpreter.c"
           // clang-format on
 
           loop_depth++;
@@ -419,12 +430,12 @@ static const unsigned char actions[55] = {
       // clang-format off
 			//| cmp byte [arg2Reg], 0
 			//| jnz =>loop_lbls[loop_depth][0]
-			dasm_put(Dst, 46, loop_lbls[loop_depth][0]);
-#line 380 "src/interpreter.c"
+			dasm_put(Dst, 56, loop_lbls[loop_depth][0]);
+#line 384 "src/interpreter.c"
 
 			//|=>loop_lbls[loop_depth][1]:
-			dasm_put(Dst, 44, loop_lbls[loop_depth][1]);
-#line 382 "src/interpreter.c"
+			dasm_put(Dst, 54, loop_lbls[loop_depth][1]);
+#line 386 "src/interpreter.c"
           // clang-format on
 
           // DBG_PRINTF("JMP_IF_NOT_ZERO::loop_depth: %d, loop_lbl[0]: %d,
@@ -441,8 +452,8 @@ static const unsigned char actions[55] = {
 
   // clang-format off
   //| ret
-  dasm_put(Dst, 53);
-#line 398 "src/interpreter.c"
+  dasm_put(Dst, 63);
+#line 402 "src/interpreter.c"
           // clang-format on
 
           link_and_encode(&d);
@@ -507,9 +518,9 @@ int exec(char *prog, int prog_len) {
         if (loop_track[i] == 1) {
           fptr = jit_loop(i, idx);
 
-					exec_state_t state;
-					state.tape_pointer = &tape[pointer];
-					state.put = put_ch;
+          exec_state_t state;
+          state.tape_pointer = &tape[pointer];
+          state.put = put_ch;
 
           fptr(&state);
 

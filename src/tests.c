@@ -48,6 +48,8 @@ void n_itr_test(void) {
 
 void print_inside_loop(void) {
   exec("+++[.-]", 7);
+  assert(get_ele_at_idx(0) == 0);
+
   reset();
   DBG_PRINT("tests::test 8 done");
 }

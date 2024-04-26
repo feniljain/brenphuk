@@ -67,11 +67,11 @@ uint8_t machine_code[TAPE_SIZE];
 size_t codes_len = 0;
 
 typedef struct {
-	void(*put)(int *c);
-	char* tape_pointer;
+  void (*put)(char c);
+  char *tape_pointer;
 } exec_state_t;
 
-typedef int (*func)(exec_state_t*);
+typedef int (*func)(exec_state_t *);
 
 // =================== Getters ===================
 
@@ -270,7 +270,7 @@ static void link_and_encode(dasm_State **d) {
   // return buf;
 }
 
-static void put_ch(int *c) { fprintf(stderr, "%c\n", *c); }
+static void put_ch(char c) { fprintf(stderr, "%c\n", c); }
 
 // static unsigned char get_ch() {
 // 	return (unsigned char)getchar();
@@ -278,7 +278,7 @@ static void put_ch(int *c) { fprintf(stderr, "%c\n", *c); }
 
 func jit_loop(int start_idx, int end_idx) {
   int loop_lbl = 1, lbl_capacity = 108, loop_depth = 0, loop_lbls[TAPE_SIZE][2];
-	
+
   dasm_State *d;
   dasm_State **Dst = &d;
 
@@ -333,14 +333,18 @@ func jit_loop(int start_idx, int end_idx) {
     }
     case OUTPUT: {
       // clang-format off
-			// | sub rsp, 8
 			| push arg1Reg
-			| call aword state:arg1Reg->put
+
+			| mov aux1Reg, aword state:arg1Reg->put
+			| mov arg1Reg, [arg2Reg]
+			// | call aword state:arg1Reg->put
+			| call aux1Reg
+
 			| pop arg1Reg
 			| mov arg2Reg, state->tape_pointer
-			// TODO: restore rsi here
-      // clang-format on
-                                        break;
+          // clang-format on
+
+          break;
     }
     case INPUT: {
       break;
@@ -459,9 +463,9 @@ int exec(char *prog, int prog_len) {
         if (loop_track[i] == 1) {
           fptr = jit_loop(i, idx);
 
-					exec_state_t state;
-					state.tape_pointer = &tape[pointer];
-					state.put = put_ch;
+          exec_state_t state;
+          state.tape_pointer = &tape[pointer];
+          state.put = put_ch;
 
           fptr(&state);
 
