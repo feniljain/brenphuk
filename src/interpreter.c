@@ -45,10 +45,10 @@ enum Op_type {
   INVALID = 0,
   FWD,
   BWD,
-  INCREMENT,
+  INCREMENT, // 3
   DECREMENT,
   OUTPUT,
-  INPUT,
+  INPUT, // 6
   JMP_IF_ZERO,
   JMP_IF_NOT_ZERO,
 };
@@ -71,7 +71,7 @@ typedef struct {
   char *tape_pointer;
 } exec_state_t;
 
-typedef int (*func)(exec_state_t *);
+typedef char *(*func)(exec_state_t *);
 
 // =================== Getters ===================
 
@@ -398,10 +398,11 @@ func jit_loop(int start_idx, int end_idx) {
   }
 
   // clang-format off
+  | mov returnReg, arg2Reg
   | ret
-          // clang-format on
+                                 // clang-format on
 
-          link_and_encode(&d);
+                                 link_and_encode(&d);
 
   return (func)(globals[lbl_start]);
 
@@ -467,7 +468,8 @@ int exec(char *prog, int prog_len) {
           state.tape_pointer = &tape[pointer];
           state.put = put_ch;
 
-          fptr(&state);
+          char *ret_addr = fptr(&state);
+          pointer = ret_addr - &tape[0];
 
           fptr = NULL;
 

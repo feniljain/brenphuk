@@ -57,10 +57,10 @@ enum Op_type {
   INVALID = 0,
   FWD,
   BWD,
-  INCREMENT,
+  INCREMENT, // 3
   DECREMENT,
   OUTPUT,
-  INPUT,
+  INPUT, // 6
   JMP_IF_ZERO,
   JMP_IF_NOT_ZERO,
 };
@@ -83,7 +83,7 @@ typedef struct {
   char *tape_pointer;
 } exec_state_t;
 
-typedef int (*func)(exec_state_t *);
+typedef char *(*func)(exec_state_t *);
 
 // =================== Getters ===================
 
@@ -308,11 +308,11 @@ enum {
   dasm_setupglobal(&d, globals, lbl__MAX);
 
 	//| .actionlist actions
-static const unsigned char actions[65] = {
+static const unsigned char actions[69] = {
   248,10,72,139,183,233,255,72,129,198,239,255,72,129,252,238,239,255,128,6,
   235,255,128,46,235,255,87,255,76,139,151,233,72,139,62,255,65,252,255,210,
   255,95,72,139,183,233,255,128,62,0,15,132,245,255,249,255,128,62,0,15,133,
-  245,255,195,255
+  245,255,72,137,252,240,195,255
 };
 
 #line 294 "src/interpreter.c"
@@ -451,12 +451,13 @@ static const unsigned char actions[65] = {
   }
 
   // clang-format off
+  //| mov returnReg, arg2Reg
   //| ret
   dasm_put(Dst, 63);
-#line 402 "src/interpreter.c"
-          // clang-format on
+#line 403 "src/interpreter.c"
+                                 // clang-format on
 
-          link_and_encode(&d);
+                                 link_and_encode(&d);
 
   return (func)(globals[lbl_start]);
 
@@ -522,7 +523,8 @@ int exec(char *prog, int prog_len) {
           state.tape_pointer = &tape[pointer];
           state.put = put_ch;
 
-          fptr(&state);
+          char *ret_addr = fptr(&state);
+          pointer = ret_addr - &tape[0];
 
           fptr = NULL;
 
