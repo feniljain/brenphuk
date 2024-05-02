@@ -7,6 +7,8 @@ void simple_inc_test(void) {
   exec("+++", 3);
   assert(get_ele_at_idx(0) == 3);
 
+  assert(get_pointer() == 0);
+
   reset();
   DBG_PRINT("tests::simple_inc done");
 }
@@ -14,6 +16,8 @@ void simple_inc_test(void) {
 void simple_dec_test(void) {
   exec("+++--", 5);
   assert(get_ele_at_idx(0) == 1);
+
+  assert(get_pointer() == 0);
 
   reset();
   DBG_PRINT("tests::simple_dec done");
@@ -24,6 +28,8 @@ void simple_ops_test(void) {
   assert(get_ele_at_idx(0) == 1);
   assert(get_ele_at_idx(1) == 2);
 
+  assert(get_pointer() == 0);
+
   reset();
   DBG_PRINT("tests::simple_ops done");
 }
@@ -32,6 +38,8 @@ void zero_itr_test(void) {
   // opening bracket for loop test
   exec("[++]", 4);
   assert(get_ele_at_idx(0) == 0);
+
+  assert(get_pointer() == 0);
 
   reset();
   DBG_PRINT("tests::zero_itr_test done");
@@ -44,6 +52,8 @@ void n_itr_test(void) {
   assert(get_ele_at_idx(1) == 0);
   assert(get_ele_at_idx(2) == 1);
 
+  assert(get_pointer() == 2);
+
   reset();
   DBG_PRINT("tests::zero_itr_test done");
 }
@@ -51,6 +61,8 @@ void n_itr_test(void) {
 void print_inside_loop(void) {
   exec("+++[.-]", 7);
   assert(get_ele_at_idx(0) == 0);
+
+  assert(get_pointer() == 0);
 
   reset();
   DBG_PRINT("tests::test 8 done");
@@ -61,6 +73,8 @@ void nested_open_bracket_test(void) {
   exec("[++[++]]", 8);
   assert(get_ele_at_idx(0) == 0);
 
+  assert(get_pointer() == 0);
+
   reset();
   DBG_PRINT("tests::test 3 done");
 }
@@ -69,6 +83,8 @@ void close_bracket_test(void) {
   // closing bracket for loop test
   exec("+++[-]", 6);
   assert(get_ele_at_idx(0) == 0);
+
+  assert(get_pointer() == 0);
 
   reset();
   DBG_PRINT("tests::test 4 done");
@@ -94,6 +110,8 @@ void test_part_hello_world(void) {
   assert(get_ele_at_idx(5) == 32);
   assert(get_ele_at_idx(6) == 8);
 
+  assert(get_pointer() == 0);
+
   reset();
   DBG_PRINT("tests::test 6 done");
 }
@@ -103,6 +121,8 @@ void test_hello_world(void) {
   exec("++++++++[>++++[>++>+++>+++>+<<<<-]>+>+>->>+[<]<-]>>.>---.+++++++..+++.>"
        ">.<-.<.+++.------.--------.>>+.>++.",
        106);
+
+  assert(get_pointer() == 6);
 
   reset();
   DBG_PRINT("tests::test 7 done");
@@ -136,11 +156,13 @@ void test_mandlebrot_start(void) {
   assert(get_ele_at_idx(124) == 1);
   assert(get_ele_at_idx(142) == 1);
 
+  assert(get_pointer() == 10);
+
   // all this thanks to: https://arkark.github.io/brainfuck-online-simulator/ ,
   // but had to calculate indices myself :sob:
 
   reset();
-  DBG_PRINT("tests::test 7 done");
+  DBG_PRINT("tests::mandlebrto start test done");
 }
 
 int tests(void) {
