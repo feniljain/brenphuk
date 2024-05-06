@@ -2,6 +2,7 @@
 #include <errno.h>
 #include <stdarg.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -271,7 +272,7 @@ static void link_and_encode(dasm_State **d) {
   // return buf;
 }
 
-static void put_ch(char c) { fprintf(stderr, "%c\n", c); }
+static void put_ch(char c) { fprintf(stderr, "%c", c); }
 
 // static unsigned char get_ch() {
 // 	return (unsigned char)getchar();
@@ -334,6 +335,7 @@ func jit_loop(int start_idx, int end_idx) {
     }
     case OUTPUT: {
       // clang-format off
+			| mov state:arg1Reg->tape_pointer, arg2Reg
 			| push arg1Reg
 
 			| mov aux1Reg, aword state:arg1Reg->put
@@ -343,10 +345,10 @@ func jit_loop(int start_idx, int end_idx) {
 			| call aux1Reg
 
 			| pop arg1Reg
-			| mov arg2Reg, state->tape_pointer
-          // clang-format on
+			| mov arg2Reg, aword state:arg1Reg->tape_pointer
+                        // clang-format on
 
-          break;
+                        break;
     }
     case INPUT: {
       break;
@@ -415,7 +417,8 @@ func jit_loop(int start_idx, int end_idx) {
 // TODO(feniljain): compare jit vs loop caching approaches
 int exec(char *prog, int prog_len) {
   DBG_PRINT(prog);
-  int i = 0, val;
+  int i = 0;
+  uint8_t val;
 
   parse(prog, prog_len);
   // print_op_assoc(); // This is for checking which all ops occur together
@@ -434,14 +437,14 @@ int exec(char *prog, int prog_len) {
       pointer -= ops[i].repeat; // TODO(feniljain): Add bound checks here
       break;
     case INCREMENT:
-      val = (int)tape[pointer];
+      val = tape[pointer];
       val += ops[i].repeat; // TODO(feniljain): add int overflow check here
-      tape[pointer] = (char)val;
+      tape[pointer] = val;
       break;
     case DECREMENT:
-      val = (int)tape[pointer];
+      val = tape[pointer];
       val -= ops[i].repeat; // TODO(feniljain): add int undeflow check here
-      tape[pointer] = (char)val;
+      tape[pointer] = val;
       break;
     case OUTPUT:
       printf("%c", tape[pointer]);

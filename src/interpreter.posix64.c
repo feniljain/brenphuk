@@ -10,6 +10,7 @@
 #include <errno.h>
 #include <stdarg.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -31,7 +32,7 @@
 #if DASM_VERSION != 10400
 #error "Version mismatch between DynASM and included encoding engine"
 #endif
-#line 23 "src/interpreter.c"
+#line 24 "src/interpreter.c"
 //|	.define arg1Reg, rdi
 //|	.define arg2Reg, rsi
 //|	.define aux1Reg, r10
@@ -283,7 +284,7 @@ static void link_and_encode(dasm_State **d) {
   // return buf;
 }
 
-static void put_ch(char c) { fprintf(stderr, "%c\n", c); }
+static void put_ch(char c) { fprintf(stderr, "%c", c); }
 
 // static unsigned char get_ch() {
 // 	return (unsigned char)getchar();
@@ -304,30 +305,30 @@ enum {
   lbl_start,
   lbl__MAX
 };
-#line 291 "src/interpreter.c"
+#line 292 "src/interpreter.c"
 	void *globals[lbl__MAX];
   dasm_setupglobal(&d, globals, lbl__MAX);
 
 	//| .actionlist actions
-static const unsigned char actions[69] = {
+static const unsigned char actions[73] = {
   248,10,72,139,183,233,255,72,129,198,239,255,72,129,252,238,239,255,128,6,
-  235,255,128,46,235,255,87,255,76,139,151,233,72,139,62,255,65,252,255,210,
-  255,95,72,139,183,233,255,128,62,0,15,132,245,255,249,255,128,62,0,15,133,
-  245,255,72,137,252,240,195,255
+  235,255,128,46,235,255,72,137,183,233,87,255,76,139,151,233,72,139,62,255,
+  65,252,255,210,255,95,72,139,183,233,255,128,62,0,15,132,245,255,249,255,
+  128,62,0,15,133,245,255,72,137,252,240,195,255
 };
 
-#line 295 "src/interpreter.c"
+#line 296 "src/interpreter.c"
 	dasm_setup(&d, actions);
 	dasm_growpc(&d, lbl_capacity);
 
 	//|.type state, exec_state_t, arg1Reg
 #define Dt1(_V) (int)(ptrdiff_t)&(((exec_state_t *)0)_V)
-#line 299 "src/interpreter.c"
+#line 300 "src/interpreter.c"
 
   //| ->start:
 	//| mov arg2Reg, state->tape_pointer
 	dasm_put(Dst, 0, Dt1(->tape_pointer));
-#line 302 "src/interpreter.c"
+#line 303 "src/interpreter.c"
 
       // clang-format on
 
@@ -341,7 +342,7 @@ static const unsigned char actions[69] = {
       // clang-format off
 			//| add arg2Reg, ops[i].repeat
 			dasm_put(Dst, 7, ops[i].repeat);
-#line 314 "src/interpreter.c"
+#line 315 "src/interpreter.c"
                      // clang-format on
                      break;
     }
@@ -349,7 +350,7 @@ static const unsigned char actions[69] = {
       // clang-format off
 			//| sub arg2Reg, ops[i].repeat
 			dasm_put(Dst, 12, ops[i].repeat);
-#line 320 "src/interpreter.c"
+#line 321 "src/interpreter.c"
                      // clang-format on
                      break;
     }
@@ -357,7 +358,7 @@ static const unsigned char actions[69] = {
       // clang-format off
 			//| add byte [arg2Reg], ops[i].repeat
 			dasm_put(Dst, 18, ops[i].repeat);
-#line 326 "src/interpreter.c"
+#line 327 "src/interpreter.c"
                            // clang-format on
                            break;
     }
@@ -365,33 +366,34 @@ static const unsigned char actions[69] = {
       // clang-format off
 			//| sub byte [arg2Reg], ops[i].repeat
 			dasm_put(Dst, 22, ops[i].repeat);
-#line 332 "src/interpreter.c"
+#line 333 "src/interpreter.c"
                            // clang-format on
                            break;
     }
     case OUTPUT: {
       // clang-format off
+			//| mov state:arg1Reg->tape_pointer, arg2Reg
 			//| push arg1Reg
-			dasm_put(Dst, 26);
-#line 338 "src/interpreter.c"
+			dasm_put(Dst, 26, Dt1(->tape_pointer));
+#line 340 "src/interpreter.c"
 
 			//| mov aux1Reg, aword state:arg1Reg->put
 			//| mov arg1Reg, [arg2Reg]
-			dasm_put(Dst, 28, Dt1(->put));
-#line 341 "src/interpreter.c"
+			dasm_put(Dst, 32, Dt1(->put));
+#line 343 "src/interpreter.c"
 
 			// | call aword state:arg1Reg->put
 			//| call aux1Reg
-			dasm_put(Dst, 36);
-#line 344 "src/interpreter.c"
+			dasm_put(Dst, 40);
+#line 346 "src/interpreter.c"
 
 			//| pop arg1Reg
-			//| mov arg2Reg, state->tape_pointer
-			dasm_put(Dst, 41, Dt1(->tape_pointer));
-#line 347 "src/interpreter.c"
-          // clang-format on
+			//| mov arg2Reg, aword state:arg1Reg->tape_pointer
+			dasm_put(Dst, 45, Dt1(->tape_pointer));
+#line 349 "src/interpreter.c"
+                        // clang-format on
 
-          break;
+                        break;
     }
     case INPUT: {
       break;
@@ -414,12 +416,12 @@ static const unsigned char actions[69] = {
       // clang-format off
 			//| cmp byte [arg2Reg], 0
 			//| jz =>loop_lbls[loop_depth][1]
-			dasm_put(Dst, 47, loop_lbls[loop_depth][1]);
-#line 372 "src/interpreter.c"
+			dasm_put(Dst, 51, loop_lbls[loop_depth][1]);
+#line 374 "src/interpreter.c"
 
 			//|=>loop_lbls[loop_depth][0]:
-			dasm_put(Dst, 54, loop_lbls[loop_depth][0]);
-#line 374 "src/interpreter.c"
+			dasm_put(Dst, 58, loop_lbls[loop_depth][0]);
+#line 376 "src/interpreter.c"
           // clang-format on
 
           loop_depth++;
@@ -432,12 +434,12 @@ static const unsigned char actions[69] = {
       // clang-format off
 			//| cmp byte [arg2Reg], 0
 			//| jnz =>loop_lbls[loop_depth][0]
-			dasm_put(Dst, 56, loop_lbls[loop_depth][0]);
-#line 386 "src/interpreter.c"
+			dasm_put(Dst, 60, loop_lbls[loop_depth][0]);
+#line 388 "src/interpreter.c"
 
 			//|=>loop_lbls[loop_depth][1]:
-			dasm_put(Dst, 54, loop_lbls[loop_depth][1]);
-#line 388 "src/interpreter.c"
+			dasm_put(Dst, 58, loop_lbls[loop_depth][1]);
+#line 390 "src/interpreter.c"
           // clang-format on
 
           // DBG_PRINTF("JMP_IF_NOT_ZERO::loop_depth: %d, loop_lbl[0]: %d,
@@ -455,8 +457,8 @@ static const unsigned char actions[69] = {
   // clang-format off
   //| mov returnReg, arg2Reg
   //| ret
-  dasm_put(Dst, 63);
-#line 405 "src/interpreter.c"
+  dasm_put(Dst, 67);
+#line 407 "src/interpreter.c"
                                  // clang-format on
 
                                  link_and_encode(&d);
@@ -470,7 +472,8 @@ static const unsigned char actions[69] = {
 // TODO(feniljain): compare jit vs loop caching approaches
 int exec(char *prog, int prog_len) {
   DBG_PRINT(prog);
-  int i = 0, val;
+  int i = 0;
+  uint8_t val;
 
   parse(prog, prog_len);
   // print_op_assoc(); // This is for checking which all ops occur together
@@ -489,14 +492,14 @@ int exec(char *prog, int prog_len) {
       pointer -= ops[i].repeat; // TODO(feniljain): Add bound checks here
       break;
     case INCREMENT:
-      val = (int)tape[pointer];
+      val = tape[pointer];
       val += ops[i].repeat; // TODO(feniljain): add int overflow check here
-      tape[pointer] = (char)val;
+      tape[pointer] = val;
       break;
     case DECREMENT:
-      val = (int)tape[pointer];
+      val = tape[pointer];
       val -= ops[i].repeat; // TODO(feniljain): add int undeflow check here
-      tape[pointer] = (char)val;
+      tape[pointer] = val;
       break;
     case OUTPUT:
       printf("%c", tape[pointer]);
