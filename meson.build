@@ -40,9 +40,9 @@ executable('brenphuk',
 								'-Wno-implicit-fallthrough',
 								'-Wno-pedantic',  # can't cast void* as function pointer without this :sob:, try this someday: https://stackoverflow.com/questions/14134245/iso-c-void-and-function-pointers
 								'-Wno-sign-conversion', '-Wno-conversion', '-Wno-switch-default', # this row is for no's to get dynasm header files compiled
-								# '-O3', # uncomment when done with JIT impl, commenting for simplification looking at final code when debugging JIT bugs
+								'-O3', # uncomment when done with JIT impl, commenting for simplification looking at final code when debugging JIT bugs
 								# '-Db_sanitize=address,undefined',
-								'-g'
+								# '-g'
 						],
 						include_directories: inc,
 						dependencies : [readline_dep] # , dynasm_dep],

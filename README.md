@@ -1,6 +1,6 @@
 # Brenphuk
 
-NOTE: Currently this project only works on x86_64 systems
+NOTE: Currently this project only works on linux x86_64 systems
 
 ## What
 
@@ -18,6 +18,7 @@ A brainfuck language interpreter, this project contains 4 implementations of int
 - readline
 - meson
 - ninja
+- dynasm (for `attempt_4`)
 
 ### Meson and ninja:
 
@@ -33,8 +34,9 @@ To reflect changes in `build` dir changing meson.build/branches:
 meson setup --reconfigure build, to try building after changes
 ```
 
-When binary is run without any args passed, it by default lands in repl mode. One can run tests using:
+NOTE: For `attempt_4` to get dynasm running properly, run `./dynasm_install.sh`, that should setup everything for you :)
 
+When binary is run without any args passed, it by default lands in repl mode. One can run tests using:
 ```sh
 ./brenphuk tests
 ```
