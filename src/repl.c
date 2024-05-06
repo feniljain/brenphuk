@@ -41,8 +41,6 @@ int repl(void) {
       }
     }
 
-  // add_history(); // TODO(feniljain): remember to check if it's an empty line,
-  // don't add it
   nxt_itr:
     free(prog);
   }

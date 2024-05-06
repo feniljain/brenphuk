@@ -378,72 +378,25 @@ void test_mandelbrot_without_print(void) {
   assert(get_ele_at_idx(306) == 99);
   assert(get_ele_at_idx(307) == 45);
 
-  // assert(get_ele_at_idx(59) == 1);
-  // assert(get_ele_at_idx(60) == 1);
-  // assert(get_ele_at_idx(61) == 1);
-  // assert(get_ele_at_idx(68) == 1);
-  // assert(get_ele_at_idx(70) == 1);
-  // assert(get_ele_at_idx(75) == 1);
-
-  // assert(get_ele_at_idx(79) == 1);
-  // assert(get_ele_at_idx(86) == 1);
-  // assert(get_ele_at_idx(87) == 1);
-  // assert(get_ele_at_idx(88) == 1);
-  // assert(get_ele_at_idx(95) == 1);
-  // assert(get_ele_at_idx(97) == 1);
-
-  // assert(get_ele_at_idx(104) == 1);
-  // assert(get_ele_at_idx(106) == 1);
-  // assert(get_ele_at_idx(117) == 1);
-  // assert(get_ele_at_idx(119) == 1);
-  // assert(get_ele_at_idx(126) == 1);
-  // assert(get_ele_at_idx(128) == 1);
-
-  // assert(get_ele_at_idx(133) == 1);
-  // assert(get_ele_at_idx(142) == 1);
-  // assert(get_ele_at_idx(151) == 1);
-
-  // assert(get_ele_at_idx(165) == 1);
-
-  // assert(get_ele_at_idx(306) == 1);
-  // assert(get_ele_at_idx(307) == 1);
-
-  // assert(get_ele_at_idx(115) == 1);
-  // assert(get_ele_at_idx(124) == 1);
-  // assert(get_ele_at_idx(142) == 1);
-
   // all this thanks to: https://arkark.github.io/brainfuck-online-simulator/ ,
   // but had to calculate indices myself :sob:
 
   reset();
-  DBG_PRINT("tests::mandelbrot start test done");
-
-  // loop start:
-  // 56
-
-  // dots:
-  // 2262
-  // 2266
-  // 2606
-
-  // 2254
-
-  // in OG program
-  // biggest bracket match: 130:8
+  DBG_PRINT("tests::mandelbrot without print test done");
 }
 
 int tests(void) {
-  // simple_inc_test();
-  // simple_dec_test();
-  // simple_ops_test();
-  // zero_itr_test();
-  // n_itr_test();
-  // nested_open_bracket_test();
-  // close_bracket_test();
-  // print_inside_loop();
-  // test_part_hello_world();
-  // test_hello_world();
-  // test_mandelbrot_start();
+  simple_inc_test();
+  simple_dec_test();
+  simple_ops_test();
+  zero_itr_test();
+  n_itr_test();
+  nested_open_bracket_test();
+  close_bracket_test();
+  print_inside_loop();
+  test_part_hello_world();
+  test_hello_world();
+  test_mandelbrot_start();
   test_mandelbrot_without_print();
 
   return 0;

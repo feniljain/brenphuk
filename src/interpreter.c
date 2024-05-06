@@ -69,6 +69,7 @@ size_t codes_len = 0;
 
 typedef struct {
   void (*put)(char c);
+  void (*take)(char *c);
   char *tape_pointer;
 } exec_state_t;
 
@@ -274,9 +275,7 @@ static void link_and_encode(dasm_State **d) {
 
 static void put_ch(char c) { fprintf(stderr, "%c", c); }
 
-// static unsigned char get_ch() {
-// 	return (unsigned char)getchar();
-// }
+static void take_ch(char *c) { *c = (char)getchar(); }
 
 func jit_loop(int start_idx, int end_idx) {
   int loop_lbl = 1, lbl_capacity = 108, loop_depth = 0, loop_lbls[TAPE_SIZE][2];
@@ -351,7 +350,19 @@ func jit_loop(int start_idx, int end_idx) {
                         break;
     }
     case INPUT: {
-      break;
+      // clang-format off
+			| mov state:arg1Reg->tape_pointer, arg2Reg
+			| push arg1Reg
+
+			| mov aux1Reg, aword state:arg1Reg->take
+			| mov arg1Reg, arg2Reg
+
+			| call aux1Reg
+
+			| pop arg1Reg
+			| mov arg2Reg, aword state:arg1Reg->tape_pointer
+                        // clang-format on
+                        break;
     }
     case JMP_IF_ZERO: {
       if ((loop_lbl + 2) >= lbl_capacity) {
@@ -413,8 +424,6 @@ func jit_loop(int start_idx, int end_idx) {
   // return (*(void **) (&func))(globals[lbl_start]);
 }
 
-// TODO(feniljain): shift all operations to functions and try flamegraph
-// TODO(feniljain): compare jit vs loop caching approaches
 int exec(char *prog, int prog_len) {
   DBG_PRINT(prog);
   int i = 0;
@@ -473,6 +482,7 @@ int exec(char *prog, int prog_len) {
           exec_state_t state;
           state.tape_pointer = &tape[pointer];
           state.put = put_ch;
+          state.take = take_ch;
 
           char *ret_addr = fptr(&state);
           pointer = ret_addr - &tape[0];
