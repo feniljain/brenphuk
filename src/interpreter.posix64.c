@@ -96,6 +96,7 @@ int get_pointer(void) { return pointer; }
 // =================== Interpreter Impl ===================
 
 enum Bracket { OPEN = 0, CLOSE = 1 };
+
 void print_bracket_arr(int stop_len, enum Bracket br) {
   int i = 0;
   char br_ch = '\0';
@@ -303,7 +304,7 @@ enum {
   lbl_start,
   lbl__MAX
 };
-#line 290 "src/interpreter.c"
+#line 291 "src/interpreter.c"
 	void *globals[lbl__MAX];
   dasm_setupglobal(&d, globals, lbl__MAX);
 
@@ -315,18 +316,18 @@ static const unsigned char actions[69] = {
   245,255,72,137,252,240,195,255
 };
 
-#line 294 "src/interpreter.c"
+#line 295 "src/interpreter.c"
 	dasm_setup(&d, actions);
 	dasm_growpc(&d, lbl_capacity);
 
 	//|.type state, exec_state_t, arg1Reg
 #define Dt1(_V) (int)(ptrdiff_t)&(((exec_state_t *)0)_V)
-#line 298 "src/interpreter.c"
+#line 299 "src/interpreter.c"
 
   //| ->start:
 	//| mov arg2Reg, state->tape_pointer
 	dasm_put(Dst, 0, Dt1(->tape_pointer));
-#line 301 "src/interpreter.c"
+#line 302 "src/interpreter.c"
 
       // clang-format on
 
@@ -340,7 +341,7 @@ static const unsigned char actions[69] = {
       // clang-format off
 			//| add arg2Reg, ops[i].repeat
 			dasm_put(Dst, 7, ops[i].repeat);
-#line 313 "src/interpreter.c"
+#line 314 "src/interpreter.c"
                      // clang-format on
                      break;
     }
@@ -348,7 +349,7 @@ static const unsigned char actions[69] = {
       // clang-format off
 			//| sub arg2Reg, ops[i].repeat
 			dasm_put(Dst, 12, ops[i].repeat);
-#line 319 "src/interpreter.c"
+#line 320 "src/interpreter.c"
                      // clang-format on
                      break;
     }
@@ -356,7 +357,7 @@ static const unsigned char actions[69] = {
       // clang-format off
 			//| add byte [arg2Reg], ops[i].repeat
 			dasm_put(Dst, 18, ops[i].repeat);
-#line 325 "src/interpreter.c"
+#line 326 "src/interpreter.c"
                            // clang-format on
                            break;
     }
@@ -364,7 +365,7 @@ static const unsigned char actions[69] = {
       // clang-format off
 			//| sub byte [arg2Reg], ops[i].repeat
 			dasm_put(Dst, 22, ops[i].repeat);
-#line 331 "src/interpreter.c"
+#line 332 "src/interpreter.c"
                            // clang-format on
                            break;
     }
@@ -372,21 +373,22 @@ static const unsigned char actions[69] = {
       // clang-format off
 			//| push arg1Reg
 			dasm_put(Dst, 26);
-#line 337 "src/interpreter.c"
+#line 338 "src/interpreter.c"
 
 			//| mov aux1Reg, aword state:arg1Reg->put
 			//| mov arg1Reg, [arg2Reg]
 			dasm_put(Dst, 28, Dt1(->put));
-#line 340 "src/interpreter.c"
+#line 341 "src/interpreter.c"
+
 			// | call aword state:arg1Reg->put
 			//| call aux1Reg
 			dasm_put(Dst, 36);
-#line 342 "src/interpreter.c"
+#line 344 "src/interpreter.c"
 
 			//| pop arg1Reg
 			//| mov arg2Reg, state->tape_pointer
 			dasm_put(Dst, 41, Dt1(->tape_pointer));
-#line 345 "src/interpreter.c"
+#line 347 "src/interpreter.c"
           // clang-format on
 
           break;
@@ -413,11 +415,11 @@ static const unsigned char actions[69] = {
 			//| cmp byte [arg2Reg], 0
 			//| jz =>loop_lbls[loop_depth][1]
 			dasm_put(Dst, 47, loop_lbls[loop_depth][1]);
-#line 370 "src/interpreter.c"
+#line 372 "src/interpreter.c"
 
 			//|=>loop_lbls[loop_depth][0]:
 			dasm_put(Dst, 54, loop_lbls[loop_depth][0]);
-#line 372 "src/interpreter.c"
+#line 374 "src/interpreter.c"
           // clang-format on
 
           loop_depth++;
@@ -431,11 +433,11 @@ static const unsigned char actions[69] = {
 			//| cmp byte [arg2Reg], 0
 			//| jnz =>loop_lbls[loop_depth][0]
 			dasm_put(Dst, 56, loop_lbls[loop_depth][0]);
-#line 384 "src/interpreter.c"
+#line 386 "src/interpreter.c"
 
 			//|=>loop_lbls[loop_depth][1]:
 			dasm_put(Dst, 54, loop_lbls[loop_depth][1]);
-#line 386 "src/interpreter.c"
+#line 388 "src/interpreter.c"
           // clang-format on
 
           // DBG_PRINTF("JMP_IF_NOT_ZERO::loop_depth: %d, loop_lbl[0]: %d,
@@ -454,7 +456,7 @@ static const unsigned char actions[69] = {
   //| mov returnReg, arg2Reg
   //| ret
   dasm_put(Dst, 63);
-#line 403 "src/interpreter.c"
+#line 405 "src/interpreter.c"
                                  // clang-format on
 
                                  link_and_encode(&d);
@@ -473,6 +475,7 @@ int exec(char *prog, int prog_len) {
   parse(prog, prog_len);
   // print_op_assoc(); // This is for checking which all ops occur together
   fill_brackets_loc();
+  print_bracket_arr(-1, OPEN);
 
   func fptr = NULL;
 

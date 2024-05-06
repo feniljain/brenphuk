@@ -84,6 +84,7 @@ int get_pointer(void) { return pointer; }
 // =================== Interpreter Impl ===================
 
 enum Bracket { OPEN = 0, CLOSE = 1 };
+
 void print_bracket_arr(int stop_len, enum Bracket br) {
   int i = 0;
   char br_ch = '\0';
@@ -337,6 +338,7 @@ func jit_loop(int start_idx, int end_idx) {
 
 			| mov aux1Reg, aword state:arg1Reg->put
 			| mov arg1Reg, [arg2Reg]
+
 			// | call aword state:arg1Reg->put
 			| call aux1Reg
 
@@ -418,6 +420,7 @@ int exec(char *prog, int prog_len) {
   parse(prog, prog_len);
   // print_op_assoc(); // This is for checking which all ops occur together
   fill_brackets_loc();
+  print_bracket_arr(-1, OPEN);
 
   func fptr = NULL;
 
